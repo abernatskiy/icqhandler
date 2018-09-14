@@ -39,16 +39,18 @@ class ICQShape(object):
 		'''Parses the flat list of vertices self.rawVertices into the three-dimensional structure
 		   self.vertices. Each element of this structure is a triple, so it's really four dimensional.
 		   Additionally, a map is generated from the three indices on self.vertices to the single
-		   index of self.rawVertices.
+		   index of self.rawVertices. The map is stored at self.indexMap3to1
 		'''
 		curidx = 0
 		self.vertices = []
+		self.indexMap3to1 = {}
 		for face in range(6):
 			faceMatrix = []
 			for j in range(self.q+1):
 				faceRow = []
 				for i in range(self.q+1):
 					faceRow.append(self.rawVertices[curidx])
+					self.indexMap3to1[(face, j, i)] = curidx
 					curidx += 1
 				faceMatrix.append(faceRow)
 			self.vertices.append(faceMatrix)
@@ -113,13 +115,23 @@ class ICQShape(object):
 		return all(map(all, edges)) and all(map(all, corners))
 
 	def generateTrianglesOn3DIndices(self):
-		'''Returns the list of triangles constituting the model.
+		'''Returns the list of six lists of triangles constituting the model.
+		   Each sublist contains all trianges of the corresponding face.
 		   Each triangle is represented as a triple of triples of indices in self.vertices.
 		'''
-		raise NotImplementedError
+		faceLists = []
+		for face in range(6):
+			faceTriangles = []
+			for i in range(self.q):
+				for j in range(self.q):
+					faceTriangles.append( ( (face,j,i), (face,j,i+1), (face,j+1,i+1) ) )
+					faceTriangles.append( ( (face,j,i), (face,j+1,i), (face,j+1,i+1) ) )
+			faceLists.append(faceTriangles)
+		return faceLists
 
 	def generateTrianglesOnFlatIndices(self):
 		'''Returns the list of triangles constituting the model.
 		   Each triangle is represented as a triple of indices in self.rawVertices.
 		'''
-		raise NotImplementedError
+		triangles3di = sum(self.generateTrianglesOn3DIndices(), [])
+		return [ (self.indexMap3to1[i], self.indexMap3to1[j], self.indexMap3to1[k]) for i,j,k in triangles3di ]

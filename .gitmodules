@@ -1,0 +1,3 @@
+[submodule "vapory"]
+	path = vapory
+	url = https://github.com/Zulko/vapory.git

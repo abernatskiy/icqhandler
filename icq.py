@@ -1,40 +1,69 @@
-''' Library for handling 3d models in implicitly connected quadrilateral format.
-    See https://sbib.psi.edu/spc_wiki/SHAPE.TXT for detailed format description.
-
-    Faces numbering:
-
-                                    -----------
-                                    |         |
-                                    |    0    |
-                                    |         |
-      -----------------------------------------
-      |         |         |         |         |
-      |    4    |    3    |    2    |    1    |
-      |         |         |         |         |
-      -----------------------------------------
-                                    |         |
-                                    |    5    |
-                                    |         |
-                                    -----------
-
-    Vertices within the face:
-
-         0 --------- I --------- Q
-      0  .  .  .  .  .  .  .  .  .
-      |  .  .  .  .  .  .  .  .  .
-      |  .  .  .  .  .  .  .  .  .
-      |  .  .  .  .  .  .  .  .  .
-      J  .  .  .  . F.  .  .  .  .
-      |  .  .  .  .  .  .  .  .  .
-      |  .  .  .  .  .  .  .  .  .
-      |  .  .  .  .  .  .  .  .  .
-      Q  .  .  .  .  .  .  .  .  .
-
-'''
-
+from abc import ABC, abstractmethod
+import vapory as vpr
 import numpy as np
 
-class ICQShape(object):
+class AbstractShape(ABC):
+	''' Abstract base class for handling shapes '''
+	@abstractmethod
+	def getVertices(self):
+		pass
+
+	@abstractmethod
+	def getTriangleIndices(self):
+		pass
+
+	def getScene(self, *, cameraLocation=[100,100,50], cameraTarget=[0,0,0], lightLocation=[100,100,100], lightColor=[1,1,1], backgroundColor=[0,0,0], objectColor=[0.5,0.5,0.5]):
+		# POVRay uses a left-handed coordinate system, so we have to flip the Z axis on all geometric vectors
+		cameraLocation[2] = -cameraLocation[2]
+		cameraTarget[2] = -cameraTarget[2]
+		lightLocation[2] = -lightLocation[2]
+
+		vertices = self.getVertices()
+		vertexArgs = [ len(vertices) ] + [ [x,y,-z] for x,y,z in vertices ] # Z axis must be flipped in vertex coordinates, too
+		triangleIndices = self.getTriangleIndices()
+		faceArgs = [ len(triangleIndices) ] + list(map(list, triangleIndices))
+
+		return vpr.Scene( vpr.Camera('location', cameraLocation, 'look_at', cameraTarget, 'sky', [0,0,-1]),
+		                  [ vpr.LightSource(lightLocation, 'color', lightColor),
+		                    vpr.Background('color', backgroundColor),
+		                    vpr.Mesh2(vpr.VertexVectors(*vertexArgs), vpr.FaceIndices(*faceArgs), vpr.Pigment('color', objectColor))
+		                  ]
+		                )
+
+class ICQShape(AbstractShape):
+	''' Class for handling 3d models in implicitly connected quadrilateral format.
+  	  See https://sbib.psi.edu/spc_wiki/SHAPE.TXT for detailed format description.
+
+	    Faces numbering:
+
+	                                    -----------
+	                                    |         |
+	                                    |    0    |
+	                                    |         |
+	      -----------------------------------------
+	      |         |         |         |         |
+	      |    4    |    3    |    2    |    1    |
+	      |         |         |         |         |
+	      -----------------------------------------
+	                                    |         |
+	                                    |    5    |
+	                                    |         |
+	                                    -----------
+
+	    Vertices within the face:
+
+	         0 --------- I --------- Q
+	      0  .  .  .  .  .  .  .  .  .
+	      |  .  .  .  .  .  .  .  .  .
+	      |  .  .  .  .  .  .  .  .  .
+	      |  .  .  .  .  .  .  .  .  .
+	      J  .  .  .  . F.  .  .  .  .
+	      |  .  .  .  .  .  .  .  .  .
+	      |  .  .  .  .  .  .  .  .  .
+	      |  .  .  .  .  .  .  .  .  .
+	      Q  .  .  .  .  .  .  .  .  .
+
+	'''
 	def __init__(self):
 		self.q = None # Model resolution
 		self.rawVertices = None # Flat list of vertices of the model
@@ -127,7 +156,7 @@ class ICQShape(object):
 
 		return all(map(all, edges)) and all(map(all, corners))
 
-	def generateTrianglesOn3DIndices(self):
+	def getTrianglesOn3DIndices(self):
 		'''Returns the list of six lists of triangles constituting the model.
 		   Each sublist contains all trianges of the corresponding face.
 		   Each triangle is represented as a triple of triples of indices in self.vertices.
@@ -142,9 +171,15 @@ class ICQShape(object):
 			faceLists.append(faceTriangles)
 		return faceLists
 
-	def generateTrianglesOnFlatIndices(self):
+	def getTrianglesOnFlatIndices(self):
 		'''Returns the list of triangles constituting the model.
 		   Each triangle is represented as a triple of indices in self.rawVertices.
 		'''
-		triangles3di = sum(self.generateTrianglesOn3DIndices(), [])
+		triangles3di = sum(self.getTrianglesOn3DIndices(), [])
 		return [ (self.indexMap3to1[i], self.indexMap3to1[j], self.indexMap3to1[k]) for i,j,k in triangles3di ]
+
+	# Overloading abstract methods of AbstractShape
+	def getTriangleIndices(self):
+		return self.getTrianglesOnFlatIndices()
+	def getVertices(self):
+		return self.rawVertices

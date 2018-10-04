@@ -77,6 +77,15 @@ class ICQShape(AbstractShape):
 		self.parseRawVertices()
 		# self.validate()
 
+	def writeICQ(self, icqfilename):
+		# Format mirrors the output of cubeICQ.c exactly, potentially with all its errors
+		with open(icqfilename, 'w') as icqfile:
+			icqfile.write('\t     ' + str(self.q) + '\n')
+			for vertex in self.rawVertices:
+				for component in vertex:
+					icqfile.write('\t{:.6f}'.format(component))
+				icqfile.write('\n')
+
 	def parseRawVertices(self):
 		'''Parses the flat list of vertices self.rawVertices into the three-dimensional structure
 		   self.vertices. Each element of this structure is a triple, so it's really four dimensional.
@@ -96,6 +105,18 @@ class ICQShape(AbstractShape):
 					curidx += 1
 				faceMatrix.append(faceRow)
 			self.vertices.append(faceMatrix)
+
+	def unparseVerticesToRaw(self):
+		'''Updates the flat list of vertices (self.rawVertices) based on self.vertices.'''
+		curIdx = 0
+		self.rawVertices = []
+		self.indexMap3to1 = {}
+		for face in range(6):
+			for j in range(self.q+1):
+				for i in range(self.q+1):
+					self.rawVertices.append(self.vertices[face][j][i])
+					curIdx += 1
+					self.indexMap3to1[(face, j, i)] = curIdx
 
 	def validate(self, exceptionIfInvalid=True):
 		'''Checks if the coordinates of redundant vertices coincide, returns true if they do'''
@@ -177,6 +198,11 @@ class ICQShape(AbstractShape):
 		'''
 		triangles3di = sum(self.getTrianglesOn3DIndices(), [])
 		return [ (self.indexMap3to1[i], self.indexMap3to1[j], self.indexMap3to1[k]) for i,j,k in triangles3di ]
+
+	def densifyTwofold(self, passes=1):
+		pass
+	def dumberTwofold(self, passes=1):
+		pass
 
 	# Overloading abstract methods of AbstractShape
 	def getTriangleIndices(self):

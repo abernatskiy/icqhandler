@@ -242,11 +242,28 @@ class ICQShape(AbstractShape):
 
 		self.vertices = newVertices
 		self.q *= 2
+
 		if passes>1:
-			self.densifyTwoFold(passes=passes-1)
+			self.densifyTwofold(passes=passes-1)
 
 	def dumberTwofold(self, passes=1):
-		pass
+		if self.q//(2**passes) < 1:
+			raise ValueError('Model resolution cannot be lowered (q={}, {} passes of twofold coarse graining requested)'.format(self.q, passes))
+		newVertices = []
+		for face in range(6):
+			faceMatrix = []
+			for j in range(self.q//2+1):
+				row = []
+				for i in range(self.q//2+1):
+					row.append(self.vertices[face][2*j][2*i])
+				faceMatrix.append(row)
+			newVertices.append(faceMatrix)
+
+		self.vertices = newVertices
+		self.q //= 2
+
+		if passes>1:
+			self.dumberTwofold(passes=passes-1)
 
 	# Overloading abstract methods of AbstractShape
 	def getTriangleIndices(self):

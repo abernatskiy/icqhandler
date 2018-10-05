@@ -200,7 +200,51 @@ class ICQShape(AbstractShape):
 		return [ (self.indexMap3to1[i], self.indexMap3to1[j], self.indexMap3to1[k]) for i,j,k in triangles3di ]
 
 	def densifyTwofold(self, passes=1):
-		pass
+		def interpolate(face, j1, i1, j2, i2):
+			vec1 = self.vertices[face][j1][i1]
+			vec2 = self.vertices[face][j2][i2]
+			return tuple( (c1+c2)/2. for c1,c2 in zip(vec1, vec2) )
+		newVertices = []
+		for face in range(6):
+			faceMatrix = []
+			lastRow = []
+			for j in range(self.q):
+				upperRow = []
+				lowerRow = []
+				for i in range(self.q):
+					# i,j     X      i+1,j   <--- upper row
+					#  X      X        X     <--- lower row
+					# i,j+1   X      i+1,j+1 <--- last row (only processed on the lower boundary)
+					# last column elements are only added on the right boundary
+
+					upperRow.append(self.vertices[face][j][i])
+					upperRow.append(interpolate(face, j, i, j, i+1))
+					if i==self.q-1:
+						upperRow.append(self.vertices[face][j][i+1])
+
+					lowerRow.append(interpolate(face, j, i, j+1, i))
+					lowerRow.append(interpolate(face, j, i, j+1, i+1))
+					if i==self.q-1:
+						lowerRow.append(interpolate(face, j, i+1, j+1, i+1))
+
+					if j==self.q-1:
+						lastRow.append(self.vertices[face][j+1][i])
+						lastRow.append(interpolate(face, j+1, i, j+1, i+1))
+						if i==self.q-1:
+							lastRow.append(self.vertices[face][j+1][i+1])
+
+				faceMatrix.append(upperRow)
+				faceMatrix.append(lowerRow)
+
+			faceMatrix.append(lastRow)
+
+			newVertices.append(faceMatrix)
+
+		self.vertices = newVertices
+		self.q *= 2
+		if passes>1:
+			self.densifyTwoFold(passes=passes-1)
+
 	def dumberTwofold(self, passes=1):
 		pass
 

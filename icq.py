@@ -94,8 +94,8 @@ class ICQShape(AbstractShape):
 			for j in range(self.q+1):
 				for i in range(self.q+1):
 					self.rawVertices.append(self.vertices[face][j][i])
-					curIdx += 1
 					self.indexMap3to1[(face, j, i)] = curIdx
+					curIdx += 1
 		self.rawVerticesUpToDate = True
 
 	def validate(self, exceptionIfInvalid=True):

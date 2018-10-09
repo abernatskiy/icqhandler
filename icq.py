@@ -41,6 +41,7 @@ class ICQShape(AbstractShape):
 		self.vertices = None # Three-dimensional list of vertices.
 		                     # Vertex at self.vertices[f][j][i] is on face f at position (i,j)
 		self.rawVerticesUpToDate = False
+		self.maxFeatureSize = None
 
 	def readICQ(self, icqfilename):
 		with open(icqfilename, 'r') as icqfile:
@@ -228,6 +229,7 @@ class ICQShape(AbstractShape):
 			self.densifyTwofold(passes=passes-1)
 
 		self.rawVerticesUpToDate = False
+		self.maxFeatureSize = None
 
 	def dumberTwofold(self, passes=1):
 		if self.q//(2**passes) < 1:
@@ -249,6 +251,7 @@ class ICQShape(AbstractShape):
 			self.dumberTwofold(passes=passes-1)
 
 		self.rawVerticesUpToDate = False
+		self.maxFeatureSize = None
 
 	###### Overloading abstract methods of AbstractShape #####
 
@@ -268,31 +271,32 @@ class ICQShape(AbstractShape):
 
 	def getMinAngularFeatureSize(self):
 		'''Returns the minimum side length of any triangle in the mesh representation of the model'''
-		def angleBetween(face, j1, i1, j2, i2):
-			vec1 = self.vertices[face][j1][i1]
-			vec2 = self.vertices[face][j2][i2]
-			result = np.arccos( np.dot(vec1, vec2) / (np.linalg.norm(vec1)*np.linalg.norm(vec2)) )
-			if face == 0:
-				print('At face {} angle between vectors {} and {} fas found to be {} pi radians'.format(face, (j1,i1), (j2,i2), result/np.pi))
-			return np.arccos( np.dot(vec1, vec2) / (np.linalg.norm(vec1)*np.linalg.norm(vec2)) )
-		facemaxs = []
-		for face in range(6):
-			rowmaxs = []
-			for j in range(self.q):
+		if not self.maxFeatureSize:
+			def angleBetween(face, j1, i1, j2, i2):
+				vec1 = self.vertices[face][j1][i1]
+				vec2 = self.vertices[face][j2][i2]
+				# result = np.arccos( np.dot(vec1, vec2) / (np.linalg.norm(vec1)*np.linalg.norm(vec2)) )
+				# if face == 0:
+				# 	print('At face {} angle between vectors {} and {} fas found to be {} pi radians'.format(face, (j1,i1), (j2,i2), result/np.pi))
+				return np.arccos( np.dot(vec1, vec2) / (np.linalg.norm(vec1)*np.linalg.norm(vec2)) )
+			facemaxs = []
+			for face in range(6):
+				rowmaxs = []
+				for j in range(self.q):
+					rowdists = []
+					for i in range(self.q):
+						rowdists.append(angleBetween(face, j, i, j, i+1))
+						rowdists.append(angleBetween(face, j, i, j+1, i))
+						rowdists.append(angleBetween(face, j, i, j+1, i+1))
+					rowdists.append(angleBetween(face, j, self.q, j+1, self.q))
+					rowmaxs.append(max(rowdists))
 				rowdists = []
 				for i in range(self.q):
-					rowdists.append(angleBetween(face, j, i, j, i+1))
-					rowdists.append(angleBetween(face, j, i, j+1, i))
-					rowdists.append(angleBetween(face, j, i, j+1, i+1))
-				rowdists.append(angleBetween(face, j, self.q, j+1, self.q))
+					rowdists.append(angleBetween(face, self.q, i, self.q, i+1))
 				rowmaxs.append(max(rowdists))
-			rowdists = []
-			for i in range(self.q):
-				rowdists.append(angleBetween(face, self.q, i, self.q, i+1))
-			rowmaxs.append(max(rowdists))
-
-			facemaxs.append(max(rowmaxs))
-		return max(facemaxs)
+				facemaxs.append(max(rowmaxs))
+			self.maxFeatureSize = max(facemaxs)
+		return self.maxFeatureSize
 
 	def upscale(self):
 		self.densifyTwofold()

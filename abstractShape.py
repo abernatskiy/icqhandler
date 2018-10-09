@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 import vapory as vpr
+import numpy as np
 
 class AbstractShape(ABC):
 	'''Abstract base class for handling shapes'''
@@ -43,3 +44,20 @@ class AbstractShape(ABC):
 		                    vpr.Mesh2(vpr.VertexVectors(*vertexArgs), vpr.FaceIndices(*faceArgs), vpr.Pigment('color', objectColor))
 		                  ]
 		                )
+
+	def getSceneSpherical(self, *, cameraR=100., cameraTheta=0., cameraPhi=0.,
+	                               lightR=100., lightTheta=np.pi/4, lightPhi=np.pi/2,
+	                               lightColor=(1,1,1), backgroundColor=(0,0,0), objectColor=(0.5,0.5,0.5)):
+		'''Assumptions: R\in[0,\infty), Theta\in[0,\pi), Phi\in[0,2\pi)'''
+		def sphericalToCartesian(r, t, p):
+			return (r*np.sin(t)*np.cos(p),
+			        r*np.sin(t)*np.sin(p),
+			        r*np.cos(t))
+		cameraLocation = sphericalToCartesian(cameraR, cameraTheta, cameraPhi)
+		lightLocation = sphericalToCartesian(lightR, lightTheta, lightPhi)
+		return self.getScene(cameraLocation=list(cameraLocation), lightLocation=list(lightLocation),
+		                      lightColor=list(lightColor), backgroundColor=list(backgroundColor), objectColor=list(objectColor))
+
+	def renderSceneSpherical(self, outfile, width=1024, height=720, antialiasing=0.01, **kwargs):
+		scene = self.getSceneSpherical(**kwargs)
+		scene.render(outfile, width=width, height=height, antialiasing=antialiasing)

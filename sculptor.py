@@ -6,10 +6,13 @@ class Sculptor:
 		self.vertices = baseShape.getVertices()
 		self.shapeUpToDate = True
 
-	def getShape(self):
+	def updateShape(self):
 		if not self.shapeUpToDate:
 			self.shape.setVertices(self.vertices)
 			self.shapeUpToDate = True
+
+	def getShape(self):
+		self.updateShape()
 		return self.shape
 
 	def rollIntoABall(self, radius=1.):
@@ -23,3 +26,8 @@ class Sculptor:
 	def renderShape(self, outfile, **kwargs):
 		shape = self.getShape()
 		shape.renderSceneSpherical(outfile, **kwargs)
+
+	def upscaleShape(self):
+		self.updateShape()
+		self.shape.upscale()
+		self.vertices = self.shape.getVertices()

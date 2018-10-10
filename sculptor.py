@@ -30,6 +30,10 @@ class Sculptor:
 	def upscaleShape(self):
 		self.shape.upscale()
 
+	def adaptiveUpscale(self, angularFeatureSize, margin=2.):
+		while margin*self.shape.getMinAngularFeatureSize() > angularFeatureSize:
+			self.upscaleShape()
+
 	def applyShaperFunction(self, shaperFunc):
 		newVertices = []
 		for v in self.shape.getVertices():
@@ -42,12 +46,16 @@ class Sculptor:
 			return tuple(npv*radius/np.linalg.norm(npv))
 		self.applyShaperFunction(normalize)
 
-	def perturbWithSphericalHarmonic(self, magnitude, m, n):
+	def perturbWithSphericalHarmonic(self, magnitude, m, n, adaptiveUpscale=True, upscaleMargin=2.):
 		'''Magnitude is absolute, not relative'''
+		if adaptiveUpscale:
+			shAngularFeatureSize = min(np.pi/(n-np.abs(m)+1), np.pi/np.abs(m)) # ...they vanish are l-m parallels of latitude and 2m meridians...
+			                                                                   # http://mathworld.wolfram.com/TesseralHarmonic.html
+			self.adaptiveUpscale(shAngularFeatureSize, margin=upscaleMargin)
 		def scaleVertexAppropriately(vertex):
 			vmag = np.linalg.norm(vertex)
 			vtheta = np.arccos(vertex[2]/vmag)
 			vphi = np.arctan(vertex[1]/vmag)
 			newmag = 1. + magnitude*real_sph_harm(m, n, vphi, vtheta)/vmag # the coordinates are swapped because code follows physical (ISO) convention while scikit follows mathematical convention
-			return ( v*newmag for v in vertex )
+			return tuple( v*newmag for v in vertex )
 		self.applyShaperFunction(scaleVertexAppropriately)

@@ -46,18 +46,16 @@ cpus = 8
 randomSeed = 42
 
 # Asteroid generator
-#asteroids = 10
-numAsteroids = 1
+numAsteroids = 10
 baseRadius = 15.
 baseResolution = 4 # Q will be 2**4 unless a spherical harmonic with finer features is applied
 resolutionMargin = 4 # model resolution must be such that the smallest spherical harmonic feature must be at least resolutionMargin times larger than the smallest triangle
-numPerturbationApplications = 20
+numPerturbationApplications = 15
 degreeDecay = 0.15
-magnitudeDecay = 0.25
+magnitudeDecay = 0.35
 
 # Geometry generator
-#distances = [ 1000, 500, 250, 125, 62 ]
-distances = [ 250 ]
+distances = [ 250, 125, 62 ]
 numRotationsPerAsteroid = 1
 numPhases = 50
 lightSourceDistance = 1000
@@ -143,9 +141,10 @@ for astID, astSh, astRotAxes, apprAngles in zip(range(len(asteroidShapes)), aste
 				outfile = join(workdir, 'asteroid{}'.format(astID), 'condition{}_distance{}_phase{}.png'.format(condID, dist, '%04d' % phid))
 				objColor = (0.5,0.5,0.5)
 				lsColor = (lightSourceBrightness, lightSourceBrightness, lightSourceBrightness)
-				astSh.renderSceneSpherical(outfile, cameraR=dist, cameraTheta=0, cameraPhi=apprAngle,
+#				print('Calling renderer with cam at {}, light source at {}, phase {}'.format((dist,0,apprAngle), (lightSourceDistance,0,0), ph))
+				astSh.renderSceneSpherical(outfile, cameraR=dist, cameraTheta=np.pi/2., cameraPhi=apprAngle,
 				                                    rotationAxis=astRotAxis, rotationAngle=ph,
-				                                    lightR=lightSourceDistance, lightTheta=0, lightPhi=0,
+				                                    lightR=lightSourceDistance, lightTheta=np.pi/2, lightPhi=0,
 				                                    lightColor=lsColor, backgroundColor=(0,0,0), objectColor=objColor,
 				                                    width=renderWidth, height=renderHeight, antialiasing=antialiasing)
 			threadPool = ThreadPool(cpus if cpus<numPhases else numPhases)

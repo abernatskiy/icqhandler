@@ -62,6 +62,8 @@ class AbstractShape(ABC):
 		triangleIndices = self.getTriangleIndices()
 		faceArgs = [ len(triangleIndices) ] + list(map(list, triangleIndices))
 
+#		print('Rendering with camera at {} and light at {}'.format(str(cameraLocation), str(lightLocation)))
+
 		return vpr.Scene( vpr.Camera('location', cameraLocation, 'look_at', cameraTarget, 'sky', [0,0,-1]),
 		                  [ vpr.LightSource(lightLocation, 'color', lightColor),
 		                    vpr.Background('color', backgroundColor),
@@ -78,7 +80,9 @@ class AbstractShape(ABC):
 			return (r*np.sin(t)*np.cos(p),
 			        r*np.sin(t)*np.sin(p),
 			        r*np.cos(t))
+#		print('From scene generating func: got the camera coords {}'.format((cameraR, cameraTheta, cameraPhi)))
 		cameraLocation = sphericalToCartesian(cameraR, cameraTheta, cameraPhi)
+#		print('From scene generating func: converted to cartesian, got {}'.format(cameraLocation))
 		lightLocation = sphericalToCartesian(lightR, lightTheta, lightPhi)
 		return self.getScene(cameraLocation=list(cameraLocation), lightLocation=list(lightLocation),
 		                      lightColor=list(lightColor), backgroundColor=list(backgroundColor), objectColor=list(objectColor),

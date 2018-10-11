@@ -52,17 +52,20 @@ baseRadius = 15.
 baseResolution = 4 # Q will be 2**4 unless a spherical harmonic with finer features is applied
 resolutionMargin = 4 # model resolution must be such that the smallest spherical harmonic feature must be at least resolutionMargin times larger than the smallest triangle
 numPerturbationApplications = 10
-degreeDecay = 0.2
+degreeDecay = 0.15
 
 # Geometry generator
 # distances = [ 1000, 500, 250, 150, 100, 50 ]
 distances = [ 500, 100 ]
 numRotationsPerAsteroid = 1
-numPhasesPerAsteroid = 4
+numPhases = 4
+lightSourceDistance = 1000
+lightSourceBrightness = 3
 
 # Rendering
 renderWidth = 300
 renderHeight = 300
+antialiasing = 0.01
 
 ##### END OF CONFIGURATION #####
 
@@ -97,6 +100,18 @@ def saveRotations(rotations, filename):
 		for rot in rotations:
 			outfile.write(' '.join(map(str, rot)) + '\n')
 
+class CircularOrbit:
+	'''Computes spherical coordinates theta and phi based on orbital phase,
+     inclination i, longitude of ascending node omega and phaseOffset.
+  '''
+	def __init__(self, i, omega, phaseOffset=0.):
+		'''i stands for inclination, omega for longitude of ascending node'''
+		self.i = i
+		self.omega = omega
+		self.phaseOffset = phaseOffset
+	def getSphericalCoordinates(self, phase):
+		return self.i*np.cos(phase+self.phaseOffset), (self.omega+phase+self.phaseOffset+np.pi/2) % (2.*np.pi)
+
 # The generator itself
 
 np.random.seed(randomSeed)
@@ -117,3 +132,20 @@ lightSourcePositions = [ [ sampleARotationWithPhaseOffset() for _ in range(numRo
 for id, lpos in enumerate(lightSourcePositions):
 	saveRotations(lpos, join(workdir, 'asteroid{}/lightSourcePositions.txt'.format(id)))
 
+phases = [ 2.*np.pi*float(i)/float(numPhases) for i in range(numPhases) ]
+for astID, astSh, astRots, lsPoss in zip(range(len(asteroidShapes)), asteroidShapes, asteroidRotations, lightSourcePositions):
+	for rotID, astRot, lsPos in zip(range(len(astRots)), astRots, lsPoss):
+		camOrbit = CircularOrbit(*astRot)
+		lsOrbit = CircularOrbit(lsPos[0], lsPos[1], phaseOffset=lsPos[2])
+		for dist in distances:
+			for ph in phases:
+				outfile = join(workdir, 'asteroid{}'.format(astID), 'rotation{}_distance{}_phase{}.png'.format(rotID, dist, ph))
+				camr = dist
+				camth, camph = camOrbit.getSphericalCoordinates(ph)
+				lsr = lightSourceDistance
+				lsth, lsph = lsOrbit.getSphericalCoordinates(ph)
+				lsColor = (lightSourceBrightness, lightSourceBrightness, lightSourceBrightness)
+				astSh.renderSceneSpherical(outfile, cameraR=camr, cameraTheta=camth, cameraPhi=camph,
+				                                    lightR=lsr, lightTheta=lsth, lightPhi=lsph,
+				                                    lightColor=lsColor, backgroundColor=(0,0,0), objectColor=(0.5,0.5,0.5),
+				                                    width=renderWidth, height=renderHeight, antialiasing=antialiasing)

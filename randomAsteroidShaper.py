@@ -1,34 +1,57 @@
 #!/usr/bin/env python3
 
-''' Creates a dataset of rendered asteroid shapes using the spherical harmonics approximation
+''' Creates a dataset of rendered synthetic asteroid shapes using the spherical
+    harmonics perturbation.
 
     Asteroid sampling procedure:
-    1. An sculptable shape is generated as a sphere of radius baseRadius. The resolution is increased baseResolution times.
+    1. An sculptable shape is generated as a sphere of radius baseRadius. The
+       resolution is increased baseResolution times, in Shape-class specific
+       discrete steps.
     2. A spherical harmonic perturbation is sampled as follows:
-       a. Degree n of the spherical harmonic perturbation is sampled from geometric distribution decaying at rate degreeDecay.
-       b. Order m of the spherical harmonic perturbation is sampled from uniform distribution over [-n, -n+1, ..., n]
-       c. Amplitude of the spherical harmonic perturbation is computed as r*baseRadius, where r is a random number from [0,1] sampled from beta distribution with a=1 and b=1+n*abs(m)
-    3. Perturbation is applied to the shape. If the perturbation has fine features, resolution of the shape is increased accordingly.
+       a. Degree n of the spherical harmonic perturbation is sampled from
+          geometric distribution decaying at rate degreeDecay.
+       b. Order m of the spherical harmonic perturbation is sampled from uniform
+          distribution over [-n, -n+1, ..., n]
+       c. Amplitude of the spherical harmonic perturbation is computed as
+          r*baseRadius, where r is a random number from [0,1] sampled from beta
+          distribution with alpha=1 and beta=1+magnitudeDecay*n*abs(m)
+    3. Perturbation is applied to the shape. If the perturbation has fine
+       features, resolution of the shape is increased until the feature size is
+       at least resolutionMargin times larger than the largest triangle side in
+       the shape's mesh.
     4. Steps 2 and 3 are repeated numPerturbationApplications times.
-    5. Asteroid is assigned a unique numeric id. The shape is saved into asteroid{}/icq.txt file.
+    5. Asteroid is assigned a unique numeric id. The shape is saved into
+       asteroid<id>/icq.txt file.
 
-    Asteroid rotation direction is expressed as inclination and longitude of ascending node of the spacecraft's orbit in asteroid's reference frame.
-    Those parameters are uniformly sampled from [0, pi/2) and [0, 2*pi), correspondingly. More than one rotation per asteroid can be sampled (variable numRotationsPerAsteroid).
-		Rotation parameters are saved into asteroid{}/rotations.txt, in which each line is inclination, then space, then longitude of ascending node.
+    The dataset builder uses a reference frame attached to the asteroid, with
+    the origin is at the center of the original sphere from which the asteroid
+    was sculpted. That point plus the light source position and the camera
+    position define the XY plane. X axis is the direction towards the light
+    source, that is located at exactly (lightSourceDistance, 0, 0).
 
-    Light source is assumed to be at rest in spacecraft's reference frame. Hence, in the asteroid reference frame it follows a circular orbit with the
-    same period as the spacecraft. Light position is therefore described by the same two parameters as the asteroid rotation, plus phase offset between
-    the orbits (in [0, 2*pi)). Those three values are sampled uniformly and saved to asteroid{}/lightSourcePositions.txt as columns. One light position is
-    sampled for every rotation.
+    Asteroid rotation axis is a uniformly sampled unit vector.
+    numRotationsPerAsteroid rotation axes are sampled for each asteroid.
+    Additionally, one camera approach angle is sampled uniformly from [0, 2pi)
+    for each rotation axis. It is the angle between the radius-vectors of light
+    source and camera.
 
-    Distance from spacecraft to asteroid is variable and takes values from the list "distances". Distance to and brightness of the light source are
-    constants (lightSourceDistance, lightSourceBrightness).
+    Rotation axes component and approach angles are saved to
+    asteroid<id>/rotationAxes.txt and asteroid<id>/approachAngles.txt,
+    correspondingly.
 
-    Only white light and white asteroid surfaces are supported at the moment. Resulting asteroids are in grayscale.
+    Distance from camera to asteroid is variable and takes values from the list
+    "distances". Distance to and brightness of the light source are constants
+    (lightSourceDistance, lightSourceBrightness).
 
-		For each asteroid, rotation (with corresponding light source position) and distance to asteroid numPhases renders are made, corresponding to different
-    phases of asteroid rotation. Asteroid is centered in all renders. Resolution is constant (parameters renderWidth, renderHeight). Renders are saved to
-    asteroid{}/rotation{}_distance{}_phase{}.png (format asteroid id, rotation id, distance, phase in radians). Rendering is multithreaded.
+    Only white light and uniform grey asteroid surfaces are supported at the
+    moment. Resulting images are in grayscale.
+
+		For each asteroid, rotation axis (with corresponding approach angle) and
+    distance to asteroid numPhases renders are made, corresponding to different
+    phases of asteroid rotation. Asteroid is centered in all renders. Resolution
+    is constant (parameters renderWidth, renderHeight). Renders are saved to
+    asteroid<id>/rotation<rotAxisID>_distance<dist>_phase<phaseNum>.png.
+    Rendering is multithreaded, max thread number is ruled by "cpus" variable.
 
 '''
 
@@ -48,8 +71,11 @@ randomSeed = 42
 # Asteroid generator
 numAsteroids = 10
 baseRadius = 15.
-baseResolution = 4 # Q will be 2**4 unless a spherical harmonic with finer features is applied
-resolutionMargin = 4 # model resolution must be such that the smallest spherical harmonic feature must be at least resolutionMargin times larger than the smallest triangle
+baseResolution = 4 # for ICQShape, Q will be 2**4 unless a spherical harmonic
+                   # with finer features is applied
+resolutionMargin = 4 # model resolution must be such that the smallest spherical
+                     # harmonic feature must be at least resolutionMargin times
+                     # larger than the smallest triangle
 numPerturbationApplications = 15
 degreeDecay = 0.15
 magnitudeDecay = 0.35

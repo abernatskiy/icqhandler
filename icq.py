@@ -51,7 +51,7 @@ class ICQShape(AbstractShape):
 		self.rawVerticesUpToDate = True
 
 	def writeICQ(self, icqfilename):
-		if not self.rawVerticesUpTodate:
+		if not self.rawVerticesUpToDate:
 			if not self.vertices:
 				raise ValueError('No data to write to the ICQ file!')
 			else:

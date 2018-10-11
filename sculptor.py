@@ -49,7 +49,7 @@ class Sculptor:
 	def perturbWithSphericalHarmonic(self, magnitude, m, n, adaptiveUpscale=True, upscaleMargin=2.):
 		'''Magnitude is absolute, not relative'''
 		if adaptiveUpscale:
-			shAngularFeatureSize = min(np.pi/(n-np.abs(m)+1), np.pi/np.abs(m)) # ...they vanish are l-m parallels of latitude and 2m meridians...
+			shAngularFeatureSize = min(np.pi/(n-np.abs(m)+1), 2*np.pi if m==0 else np.pi/np.abs(m)) # ...they vanish are l-m parallels of latitude and 2m meridians...
 			                                                                   # http://mathworld.wolfram.com/TesseralHarmonic.html
 			self.adaptiveUpscale(shAngularFeatureSize, margin=upscaleMargin)
 		def scaleVertexAppropriately(vertex):

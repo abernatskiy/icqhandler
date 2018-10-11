@@ -53,12 +53,13 @@ baseResolution = 4 # Q will be 2**4 unless a spherical harmonic with finer featu
 resolutionMargin = 4 # model resolution must be such that the smallest spherical harmonic feature must be at least resolutionMargin times larger than the smallest triangle
 numPerturbationApplications = 10
 degreeDecay = 0.15
+magnitudeDecay = 0.5
 
 # Geometry generator
 # distances = [ 1000, 500, 250, 150, 100, 50 ]
-distances = [ 500, 100 ]
+distances = [ 100 ]
 numRotationsPerAsteroid = 1
-numPhases = 4
+numPhases = 15
 lightSourceDistance = 1000
 lightSourceBrightness = 3
 
@@ -84,7 +85,8 @@ def sampleAnAsteroid():
 	for _ in range(numPerturbationApplications):
 		n = np.random.geometric(degreeDecay)
 		m = np.random.randint(-n, n+1)
-		mag = baseRadius*np.random.beta(a=1, b=1 if m==0 else n*np.abs(m))
+		beta = 1. + magnitudeDecay*n*np.abs(m)
+		mag = baseRadius*np.random.beta(a=1, b=beta)
 		scu.perturbWithSphericalHarmonic(mag, m, n, upscaleMargin=resolutionMargin)
 
 	return scu.getShape()
@@ -138,8 +140,8 @@ for astID, astSh, astRots, lsPoss in zip(range(len(asteroidShapes)), asteroidSha
 		camOrbit = CircularOrbit(*astRot)
 		lsOrbit = CircularOrbit(lsPos[0], lsPos[1], phaseOffset=lsPos[2])
 		for dist in distances:
-			for ph in phases:
-				outfile = join(workdir, 'asteroid{}'.format(astID), 'rotation{}_distance{}_phase{}.png'.format(rotID, dist, ph))
+			for phid, ph in enumerate(phases):
+				outfile = join(workdir, 'asteroid{}'.format(astID), 'rotation{}_distance{}_phase{}.png'.format(rotID, dist, phid))
 				camr = dist
 				camth, camph = camOrbit.getSphericalCoordinates(ph)
 				lsr = lightSourceDistance

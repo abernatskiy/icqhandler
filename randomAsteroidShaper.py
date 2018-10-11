@@ -159,6 +159,7 @@ for id, aan in enumerate(approachAngles):
 	saveParams(aan, join(workdir, 'asteroid{}/approachAngles.txt'.format(id)))
 
 phases = [ 2.*np.pi*float(i)/float(numPhases) for i in range(numPhases) ]
+threadPool = ThreadPool(cpus if cpus<numPhases else numPhases)
 for astID, astSh, astRotAxes, apprAngles in zip(range(len(asteroidShapes)), asteroidShapes, asteroidRotationAxes, approachAngles):
 	for condID, astRotAxis, apprAngle in zip(range(len(astRotAxes)), astRotAxes, apprAngles):
 		for dist in distances:
@@ -173,5 +174,4 @@ for astID, astSh, astRotAxes, apprAngles in zip(range(len(asteroidShapes)), aste
 				                                    lightR=lightSourceDistance, lightTheta=np.pi/2, lightPhi=0,
 				                                    lightColor=lsColor, backgroundColor=(0,0,0), objectColor=objColor,
 				                                    width=renderWidth, height=renderHeight, antialiasing=antialiasing)
-			threadPool = ThreadPool(cpus if cpus<numPhases else numPhases)
 			threadPool.map(renderPhase, enumerate(phases))

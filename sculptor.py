@@ -57,5 +57,6 @@ class Sculptor:
 			vtheta = np.arccos(vertex[2]/vmag)
 			vphi = np.arctan(vertex[1]/vmag)
 			newmag = 1. + magnitude*real_sph_harm(m, n, vphi, vtheta)/vmag # the coordinates are swapped because code follows physical (ISO) convention while scikit follows mathematical convention
+#			print('old mag = {}, new mag = {}'.format(vmag, vmag*newmag))
 			return tuple( v*newmag for v in vertex )
 		self.applyShaperFunction(scaleVertexAppropriately)

@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 import vapory as vpr
 import numpy as np
+import threading
 
 def rotation_matrix(axis, theta):
 	'''Return the rotation matrix associated with counterclockwise rotation about
@@ -85,4 +86,5 @@ class AbstractShape(ABC):
 
 	def renderSceneSpherical(self, outfile, width=1024, height=720, antialiasing=0.01, **kwargs):
 		scene = self.getSceneSpherical(**kwargs)
-		scene.render(outfile, width=width, height=height, antialiasing=antialiasing)
+		povfilename = '__temp{}__.pov'.format(threading.get_ident())
+		scene.render(outfile, width=width, height=height, antialiasing=antialiasing, tempfile=povfilename, remove_temp=True)

@@ -51,15 +51,15 @@ numAsteroids = 1
 baseRadius = 15.
 baseResolution = 4 # Q will be 2**4 unless a spherical harmonic with finer features is applied
 resolutionMargin = 4 # model resolution must be such that the smallest spherical harmonic feature must be at least resolutionMargin times larger than the smallest triangle
-numPerturbationApplications = 10
+numPerturbationApplications = 20
 degreeDecay = 0.15
-magnitudeDecay = 0.5
+magnitudeDecay = 0.25
 
 # Geometry generator
-# distances = [ 1000, 500, 250, 150, 100, 50 ]
-distances = [ 100 ]
+#distances = [ 1000, 500, 250, 125, 62 ]
+distances = [ 250 ]
 numRotationsPerAsteroid = 1
-numPhases = 15
+numPhases = 50
 lightSourceDistance = 1000
 lightSourceBrightness = 3
 
@@ -87,6 +87,7 @@ def sampleAnAsteroid():
 		m = np.random.randint(-n, n+1)
 		beta = 1. + magnitudeDecay*n*np.abs(m)
 		mag = baseRadius*np.random.beta(a=1, b=beta)
+#		print('n={}, m={}, magnitude {}'.format(n, m, mag))
 		scu.perturbWithSphericalHarmonic(mag, m, n, upscaleMargin=resolutionMargin)
 
 	return scu.getShape()
@@ -137,7 +138,8 @@ phases = [ 2.*np.pi*float(i)/float(numPhases) for i in range(numPhases) ]
 for astID, astSh, astRotAxes, apprAngles in zip(range(len(asteroidShapes)), asteroidShapes, asteroidRotationAxes, approachAngles):
 	for condID, astRotAxis, apprAngle in zip(range(len(astRotAxes)), astRotAxes, apprAngles):
 		for dist in distances:
-			for phid, ph in enumerate(phases):
+			def renderPhase(phaseDesc):
+				phid, ph = phaseDesc
 				outfile = join(workdir, 'asteroid{}'.format(astID), 'condition{}_distance{}_phase{}.png'.format(condID, dist, '%04d' % phid))
 				objColor = (0.5,0.5,0.5)
 				lsColor = (lightSourceBrightness, lightSourceBrightness, lightSourceBrightness)
@@ -146,3 +148,5 @@ for astID, astSh, astRotAxes, apprAngles in zip(range(len(asteroidShapes)), aste
 				                                    lightR=lightSourceDistance, lightTheta=0, lightPhi=0,
 				                                    lightColor=lsColor, backgroundColor=(0,0,0), objectColor=objColor,
 				                                    width=renderWidth, height=renderHeight, antialiasing=antialiasing)
+			threadPool = ThreadPool(cpus if cpus<numPhases else numPhases)
+			threadPool.map(renderPhase, enumerate(phases))

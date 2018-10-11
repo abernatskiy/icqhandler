@@ -18,7 +18,7 @@
 
     Light source is assumed to be at rest in spacecraft's reference frame. Hence, in the asteroid reference frame it follows a circular orbit with the
     same period as the spacecraft. Light position is therefore described by the same two parameters as the asteroid rotation, plus phase offset between
-    the orbits (in [0, 2*pi)). Those three values are sampled uniformly and saved to asteroid{}/lightSourcePos.txt as columns. One light position is
+    the orbits (in [0, 2*pi)). Those three values are sampled uniformly and saved to asteroid{}/lightSourcePositions.txt as columns. One light position is
     sampled for every rotation.
 
     Distance from spacecraft to asteroid is variable and takes values from the list "distances". Distance to and brightness of the light source are
@@ -68,10 +68,7 @@ renderHeight = 300
 
 # Useful functions
 
-asteroidNumber = 0
-
 def sampleAnAsteroid():
-	global asteroidNumber
 	cubeicq = join(expanduser('~'), 'icqhandler', 'shapes', 'cube2.icq')
 	ish = icq.ICQShape()
 	ish.readICQ(cubeicq)
@@ -89,6 +86,17 @@ def sampleAnAsteroid():
 
 	return scu.getShape()
 
+def sampleARotation():
+	return 0.5*np.pi*np.random.rand(), 2.*np.pi*np.random.rand()
+
+def sampleARotationWithPhaseOffset():
+	return 0.5*np.pi*np.random.rand(), 2.*np.pi*np.random.rand(), 2.*np.pi*np.random.rand()
+
+def saveRotations(rotations, filename):
+	with open(filename, 'w') as outfile:
+		for rot in rotations:
+			outfile.write(' '.join(map(str, rot)) + '\n')
+
 # The generator itself
 
 np.random.seed(randomSeed)
@@ -100,3 +108,12 @@ for id, astSh in enumerate(asteroidShapes):
 	astDir = join(workdir, 'asteroid{}'.format(id))
 	makedirs(astDir)
 	astSh.writeICQ(join(astDir, 'icq.txt'))
+
+asteroidRotations = [ [ sampleARotation() for _ in range(numRotationsPerAsteroid) ] for _ in range(numAsteroids) ]
+for id, arot in enumerate(asteroidRotations):
+	saveRotations(arot, join(workdir, 'asteroid{}/rotations.txt'.format(id)))
+
+lightSourcePositions = [ [ sampleARotationWithPhaseOffset() for _ in range(numRotationsPerAsteroid) ] for _ in range(numAsteroids) ]
+for id, lpos in enumerate(lightSourcePositions):
+	saveRotations(lpos, join(workdir, 'asteroid{}/lightSourcePositions.txt'.format(id)))
+

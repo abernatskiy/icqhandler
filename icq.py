@@ -167,7 +167,7 @@ class ICQShape(AbstractShape):
 			faceTriangles = []
 			for i in range(self.q):
 				for j in range(self.q):
-					faceTriangles.append( ( (face,j,i), (face,j,i+1), (face,j+1,i+1) ) )
+					faceTriangles.append( ( (face,j,i), (face,j+1,i+1), (face,j,i+1) ) )
 					faceTriangles.append( ( (face,j,i), (face,j+1,i), (face,j+1,i+1) ) )
 			faceLists.append(faceTriangles)
 		return faceLists

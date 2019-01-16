@@ -92,3 +92,11 @@ class AbstractShape(ABC):
 		scene = self.getSceneSpherical(**kwargs)
 		povfilename = '__temp{}__.pov'.format(threading.get_ident())
 		scene.render(outfile, width=width, height=height, antialiasing=antialiasing, tempfile=povfilename, remove_temp=True)
+
+	def writeOBJ(self, objFileName):
+		'''Exports the shape in Wavefront .OBJ format'''
+		with open(objFileName, 'w') as oof:
+			for x,y,z in self.getVertices():
+				oof.write('v {} {} {}\n'.format(x,y,z))
+			for v1,v2,v3 in self.getTriangleIndices():
+				oof.write('f {} {} {}\n'.format(v1+1,v2+1,v3+1))

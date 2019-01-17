@@ -15,5 +15,5 @@ import icq
 ish = icq.ICQShape()
 ish.readICQ(icqFileName)
 if not ish.validate(exceptionIfInvalid=False):
-	print('WARNING: the input ICQ file is invalid!')
+	print('WARNING: input ICQ file {} is invalid!'.format(icqFileName))
 ish.writeOBJ(objFileName)

@@ -93,6 +93,11 @@ class AbstractShape(ABC):
 		povfilename = '__temp{}__.pov'.format(threading.get_ident())
 		scene.render(outfile, width=width, height=height, antialiasing=antialiasing, tempfile=povfilename, remove_temp=True)
 
+	def renderSceneCartesian(self, outfile, width=1024, height=720, antialiasing=0.01, **kwargs):
+		scene = self.getScene(**kwargs)
+		povfilename = '__temp{}__.pov'.format(threading.get_ident())
+		scene.render(outfile, width=width, height=height, antialiasing=antialiasing, tempfile=povfilename, remove_temp=True)
+
 	def writeOBJ(self, objFileName):
 		'''Exports the shape in Wavefront .OBJ format'''
 		with open(objFileName, 'w') as oof:

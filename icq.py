@@ -103,8 +103,12 @@ class ICQShape(AbstractShape):
 
 		# defining a custom equality function in case we need \epsilon-equality at some point
 		def eq(v1, v2):
-			eqval = (v1==v2)
+			f1,i1,j1 = v1
+			f2,i2,j2 = v2
+			eqval = (self.vertices[f1][i1][j1]==self.vertices[f2][i2][j2])
 			if not exceptionIfInvalid:
+				# if not eqval:
+				#	print('Vertices at f={}, i={}, j={} and at f={}, i={}, j={} are different: {} and {}, correspondingly'.format(f1,i1,j1,f2,i2,j2,self.vertices[f1][i1][j1],self.vertices[f2][i2][j2]))
 				return eqval
 			elif eqval:
 				return True
@@ -112,47 +116,47 @@ class ICQShape(AbstractShape):
 				raise RuntimeError('Redundant vertex has different coordinates on different faces: {} vs {}'.format(v1, v2))
 
 		# comparing edge vertices in a pairwise manner
-		edges = [ [ eq(self.vertices[5][self.q][i], self.vertices[3][self.q][self.q-i]) for i in range(self.q+1) ], # v(I,Q,5)=v(Q-I,Q,3)
-		          [ eq(self.vertices[5][0][i], self.vertices[1][self.q][i]) for i in range(self.q+1) ],             # v(I,0,5)=v(I,Q,1)
-		          [ eq(self.vertices[4][0][i], self.vertices[0][self.q-i][self.q]) for i in range(self.q+1) ],      # v(I,0,4)=v(Q,Q-I,0)
-		          [ eq(self.vertices[3][0][i], self.vertices[0][0][self.q-i]) for i in range(self.q+1) ],           # v(I,0,3)=v(Q-i,0,0)
-		          [ eq(self.vertices[2][0][i], self.vertices[0][i][0]) for i in range(self.q+1) ],                  # v(I,0,2)=v(0,I,0)
-		          [ eq(self.vertices[1][0][i], self.vertices[0][self.q][i]) for i in range(self.q+1) ],             # v(I,0,1)=v(I,Q,0)
-		          [ eq(self.vertices[5][i][self.q], self.vertices[4][self.q][i]) for i in range(self.q+1) ],        # v(q,I,5)=v(I,Q,4)
-		          [ eq(self.vertices[4][i][self.q], self.vertices[3][i][0]) for i in range(self.q+1) ],             # v(q,I,4)=v(0,I,3)
-		          [ eq(self.vertices[3][i][self.q], self.vertices[2][i][0]) for i in range(self.q+1) ],             # v(q,I,3)=v(0,I,2)
-		          [ eq(self.vertices[2][i][self.q], self.vertices[1][i][0]) for i in range(self.q+1) ],             # v(q,I,2)=v(0,I,1)
-		          [ eq(self.vertices[5][i][0], self.vertices[2][self.q][self.q-i]) for i in range(self.q+1) ],      # v(0,I,5)=v(Q-I,Q,2)
-		          [ eq(self.vertices[4][i][0], self.vertices[1][i][self.q]) for i in range(self.q+1) ]              # v(0,I,4)=v(Q,I,1)
+		edges = [ [ eq((5, self.q, i), (3, self.q, self.q-i)) for i in range(self.q+1) ], # v(I,Q,5)=v(Q-I,Q,3)
+		          [ eq((5, 0, i), (1, self.q, i)) for i in range(self.q+1) ],             # v(I,0,5)=v(I,Q,1)
+		          [ eq((4, 0, i), (0, self.q-i, self.q)) for i in range(self.q+1) ],      # v(I,0,4)=v(Q,Q-I,0)
+		          [ eq((3, 0, i), (0, 0, self.q-i)) for i in range(self.q+1) ],           # v(I,0,3)=v(Q-i,0,0)
+		          [ eq((2, 0, i), (0, i, 0)) for i in range(self.q+1) ],                 # v(I,0,2)=v(0,I,0)
+		          [ eq((1, 0, i), (0, self.q, i)) for i in range(self.q+1) ],             # v(I,0,1)=v(I,Q,0)
+		          [ eq((5, i, self.q), (4, self.q, i)) for i in range(self.q+1) ],        # v(q,I,5)=v(I,Q,4)
+		          [ eq((4, i, self.q), (3, i, 0)) for i in range(self.q+1) ],             # v(q,I,4)=v(0,I,3)
+		          [ eq((3, i, self.q), (2, i, 0)) for i in range(self.q+1) ],             # v(q,I,3)=v(0,I,2)
+		          [ eq((2, i, self.q), (1, i, 0)) for i in range(self.q+1) ],             # v(q,I,2)=v(0,I,1)
+		          [ eq((5, i, 0), (2, self.q, self.q-i)) for i in range(self.q+1) ],      # v(0,I,5)=v(Q-I,Q,2)
+		          [ eq((4, i, 0), (1, i, self.q)) for i in range(self.q+1) ]              # v(0,I,4)=v(Q,I,1)
 		]
 
 		# comparing each pair within the three corner vertices
 		# three comparisons are necessary because at some point we might be interested in \epsilon-equality that is not transitive
-		# note: corner checking is redundant - same comparisons are while comparing edge vertices
-		corners = [ [ eq(self.vertices[0][0][0], self.vertices[2][0][0]),
-		              eq(self.vertices[2][0][0], self.vertices[3][0][self.q]),
-		              eq(self.vertices[0][0][0], self.vertices[3][0][self.q]) ],               # v(0,0,0) = v(0,0,2) = v(Q,0,3)
-                [ eq(self.vertices[0][self.q][0], self.vertices[1][0][0]),
-                  eq(self.vertices[1][0][0], self.vertices[2][0][self.q]),
-                  eq(self.vertices[0][self.q][0], self.vertices[2][0][self.q]) ],          # v(0,Q,0) = v(0,0,1) = v(Q,0,2)
-                [ eq(self.vertices[0][0][self.q], self.vertices[3][0][0]),
-                  eq(self.vertices[3][0][0], self.vertices[4][0][self.q]),
-                  eq(self.vertices[0][0][self.q], self.vertices[4][0][self.q]) ],          # v(Q,0,0) = v(0,0,3) = v(Q,0,4)
-                [ eq(self.vertices[0][self.q][self.q], self.vertices[4][0][0]),
-                  eq(self.vertices[4][0][0], self.vertices[1][0][self.q]),
-                  eq(self.vertices[0][self.q][self.q], self.vertices[1][0][self.q]) ],     # v(Q,Q,0) = v(0,0,4) = v(Q,0,1)
-                [ eq(self.vertices[5][0][0], self.vertices[1][self.q][0]),
-                  eq(self.vertices[1][self.q][0], self.vertices[2][self.q][self.q]),
-                  eq(self.vertices[5][0][0], self.vertices[2][self.q][self.q]) ],          # v(0,0,5) = v(0,Q,1) = v(Q,Q,2)
-                [ eq(self.vertices[5][self.q][0], self.vertices[2][self.q][0]),
-                  eq(self.vertices[2][self.q][0], self.vertices[3][self.q][self.q]),
-                  eq(self.vertices[5][self.q][0], self.vertices[3][self.q][self.q]) ],     # v(0,Q,5) = v(0,Q,2) = v(Q,Q,3)
-                [ eq(self.vertices[5][0][self.q], self.vertices[4][self.q][0]),
-                  eq(self.vertices[4][self.q][0], self.vertices[1][self.q][self.q]),
-                  eq(self.vertices[5][0][self.q], self.vertices[1][self.q][self.q]) ],     # v(Q,0,5) = v(0,Q,4) = v(Q,Q,1)
-                [ eq(self.vertices[5][self.q][self.q], self.vertices[3][self.q][0]),
-                  eq(self.vertices[3][self.q][0], self.vertices[4][self.q][self.q]),
-                  eq(self.vertices[5][self.q][self.q], self.vertices[4][self.q][self.q]) ] # v(Q,Q,5) = v(0,Q,3) = v(Q,Q,4)
+		# note: corner checking is redundant - same comparisons are already made while comparing edge vertices
+		corners = [ [ eq((0, 0, 0), (2, 0, 0)),
+		              eq((2, 0, 0), (3, 0, self.q)),
+		              eq((0, 0, 0), (3, 0, self.q)) ],               # v(0,0,0) = v(0,0,2) = v(Q,0,3)
+                [ eq((0, self.q, 0), (1, 0, 0)),
+                  eq((1, 0, 0), (2, 0, self.q)),
+                  eq((0, self.q, 0), (2, 0, self.q)) ],          # v(0,Q,0) = v(0,0,1) = v(Q,0,2)
+                [ eq((0, 0, self.q), (3, 0, 0)),
+                  eq((3, 0, 0), (4, 0, self.q)),
+                  eq((0, 0, self.q), (4, 0, self.q)) ],          # v(Q,0,0) = v(0,0,3) = v(Q,0,4)
+                [ eq((0, self.q, self.q), (4, 0, 0)),
+                  eq((4, 0, 0), (1, 0, self.q)),
+                  eq((0, self.q, self.q), (1, 0, self.q)) ],     # v(Q,Q,0) = v(0,0,4) = v(Q,0,1)
+                [ eq((5, 0, 0), (1, self.q, 0)),
+                  eq((1, self.q, 0), (2, self.q, self.q)),
+                  eq((5, 0, 0), (2, self.q, self.q)) ],         # v(0,0,5) = v(0,Q,1) = v(Q,Q,2)
+                [ eq((5, self.q, 0), (2, self.q, 0)),
+                  eq((2, self.q, 0), (3, self.q, self.q)),
+                  eq((5, self.q, 0), (3, self.q, self.q)) ],     # v(0,Q,5) = v(0,Q,2) = v(Q,Q,3)
+                [ eq((5, 0, self.q), (4, self.q, 0)),
+                  eq((4, self.q, 0), (1, self.q, self.q)),
+                  eq((5, 0, self.q), (1, self.q, self.q)) ],     # v(Q,0,5) = v(0,Q,4) = v(Q,Q,1)
+                [ eq((5, self.q, self.q), (3, self.q, 0)),
+                  eq((3, self.q, 0), (4, self.q, self.q)),
+                  eq((5, self.q, self.q), (4, self.q, self.q)) ] # v(Q,Q,5) = v(0,Q,3) = v(Q,Q,4)
 		]
 
 		return all(map(all, edges)) and all(map(all, corners))

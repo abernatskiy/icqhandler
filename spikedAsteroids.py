@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 
-#####     CONFIGURATION    #####
+#####    CONFIGURATION    #####
 
 # System
-cpus = 8
 randomSeed = 42
 
 # Asteroid generator
@@ -14,15 +13,18 @@ numSpikes = 1
 spikableFaces = [1, 4, 5] # render from [-R, R, -R]
 spikeSize = 0.1
 
-## Rendering
-# distance = 4
-# cameraX = ...
-# cameraY = ...
-# cameraZ = ...
-# renderWidth = 300
-# renderHeight = 300
-# antialiasing = 0.01
-# NOTE: no rendering here for now
+# Rendering
+threads = 8
+distance = 35
+cameraX = -distance
+cameraY = distance
+cameraZ = -distance
+renderWidth = 300
+renderHeight = 300
+lightColor = [1., 1., 1.]
+lightBrightness = 4.
+astColor = [0.5, 0.5, 0.5]
+antialiasing = 0.01
 
 ##### END OF CONFIGURATION #####
 
@@ -93,20 +95,14 @@ for id, (astSh, sp) in enumerate(asteroidParams):
 	astSh.writeICQ(join(astDir, 'SHAPE.txt'))
 	astSh.writeOBJ(join(astDir, 'SHAPE.obj'))
 
-#phases = [ 2.*np.pi*float(i)/float(numPhases) for i in range(numPhases) ]
-#threadPool = ThreadPool(cpus if cpus<numPhases else numPhases)
-#for astID, astSh, astRotAxes, apprAngles in zip(range(len(asteroidShapes)), asteroidShapes, asteroidRotationAxes, approachAngles):
-#	for condID, astRotAxis, apprAngle in zip(range(len(astRotAxes)), astRotAxes, apprAngles):
-#		for dist in distances:
-#			def renderPhase(phaseDesc):
-#				phid, ph = phaseDesc
-#				outfile = join(workdir, 'asteroid{}'.format(astID), 'condition{}_distance{}_phase{}.png'.format(condID, dist, '%04d' % phid))
-#				objColor = (0.5,0.5,0.5)
-#				lsColor = (lightSourceBrightness, lightSourceBrightness, lightSourceBrightness)
-##				print('Calling renderer with cam at {}, light source at {}, phase {}'.format((dist,0,apprAngle), (lightSourceDistance,0,0), ph))
-#				astSh.renderSceneSpherical(outfile, cameraR=dist, cameraTheta=np.pi/2., cameraPhi=apprAngle,
-#				                                    rotationAxis=astRotAxis, rotationAngle=ph,
-#				                                    lightR=lightSourceDistance, lightTheta=np.pi/2, lightPhi=0,
-#				                                    lightColor=lsColor, backgroundColor=(0,0,0), objectColor=objColor,
-#				                                    width=renderWidth, height=renderHeight, antialiasing=antialiasing)
-#			threadPool.map(renderPhase, enumerate(phases))
+threadPool = ThreadPool(threads)
+def renderAst(astParams):
+	id, (astSh, _) = astParams
+	outfile = join(workdir, 'shape_{}'.format(id), 'SHAPE.png')
+	lsColor = [ lightBrightness*comp for comp in lightColor ]
+	astSh.renderSceneCartesian(outfile, cameraLocation=[cameraX, cameraY, cameraZ],
+#	                                    rotationAxis=astRotAxis, rotationAngle=ph,
+	                                    lightLocation=[cameraX, cameraY, cameraZ], lightColor=lsColor,
+	                                    backgroundColor=(0,0,0), objectColor=astColor,
+	                                    width=renderWidth, height=renderHeight, antialiasing=antialiasing)
+threadPool.map(renderAst, enumerate(asteroidParams))

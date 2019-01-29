@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 
+renderWidth = 500
+renderHeight = 500
+brightness = 5
+
 import argparse
 
 parser = argparse.ArgumentParser(description='Convert a 3d shape in .ICQ format into Wavefront .OBJ format')
@@ -26,8 +30,7 @@ if not ish.validate(exceptionIfInvalid=False):
 
 ish.renderSceneCartesian(pngFileName, cameraLocation=[camX, camY, camZ],
 #                                      rotationAxis=astRotAxis, rotationAngle=ph,
-                                      lightLocation=[camX, camY, camZ], lightColor=[1,1,1],
+                                      lightLocation=[camX, camY, camZ], lightColor=[brightness, brightness, brightness],
                                       backgroundColor=(0,0,0), objectColor=[0.5,0.5,0.5],
-#                                      width=renderWidth, height=renderHeight,
+                                      width=renderWidth, height=renderHeight,
                                       antialiasing=0.01)
-

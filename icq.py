@@ -257,6 +257,14 @@ class ICQShape(AbstractShape):
 		self.rawVerticesUpToDate = False
 		self.maxFeatureSize = None
 
+	def getVertex(self, face, i, j):
+		return self.vertices[face][i][j]
+
+	def setVertex(self, face, i, j, newValue):
+		if i==0 or i==self.q or j==0 or j==self.q:
+			raise NotImplementedError('Modification of edge vertices is currently not supported')
+		self.vertices[face][i][j] = newValue
+
 	###### Overloading abstract methods of AbstractShape #####
 
 	def getTriangleIndices(self):

@@ -8,10 +8,10 @@ randomSeed = 42
 
 # Asteroid generator
 numAsteroids = 10
-resolutionPower = 3
+resolutionPower = 2
 resolutionQ = int(2**resolutionPower)
 numSpikes = 1
-spikableFaces = [1, 4, 5]
+spikableFaces = [1, 4, 5] # render from [-R, R, -R]
 spikeSize = 0.1
 
 ## Rendering
@@ -67,17 +67,29 @@ def sampleAnAsteroid():
 		updatedVertex = tuple( x+spikeSize*y for x, y in zip(oldVertex, faceNormals[f]) )
 		ish.setVertex(f, i, j, updatedVertex)
 
-	return ish
+	return ish, spikes
+
+def saveParams(rotations, filename):
+	with open(filename, 'w') as outfile:
+		try:
+			for rot in rotations:
+				outline = ' '.join(map(str, rot)) + '\n'
+				outfile.write(outline)
+		except TypeError:
+			for rot in rotations:
+				outline = str(rot)
+				outfile.write(outline)
 
 # The generator itself
 
 np.random.seed(randomSeed)
 workdir = getcwd()
 
-asteroidShapes = [ sampleAnAsteroid() for _ in range(numAsteroids) ]
-for id, astSh in enumerate(asteroidShapes):
+asteroidParams = [ sampleAnAsteroid() for _ in range(numAsteroids) ]
+for id, (astSh, sp) in enumerate(asteroidParams):
 	astDir = join(workdir, 'shape_{}'.format(id))
 	makedirs(astDir)
+	saveParams(sp, join(astDir, 'logfile.txt'))
 	astSh.writeICQ(join(astDir, 'SHAPE.txt'))
 	astSh.writeOBJ(join(astDir, 'SHAPE.obj'))
 

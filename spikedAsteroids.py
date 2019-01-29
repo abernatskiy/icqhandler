@@ -3,10 +3,10 @@
 #####    CONFIGURATION    #####
 
 # System
-randomSeed = 42
+randomSeed = 2324
 
 # Asteroid generator
-numAsteroids = 10
+numAsteroids = 100
 resolutionPower = 2
 resolutionQ = int(2**resolutionPower)
 numSpikes = 1
@@ -49,7 +49,7 @@ def sampleAnAsteroid():
 	cubeicq = join(expanduser('~'), 'icqhandler', 'shapes', 'cube2.icq')
 	ish = icq.ICQShape()
 	ish.readICQ(cubeicq)
-	ish.densifyTwofold(passes=resolutionPower)
+	ish.densifyTwofold(passes=resolutionPower-1)
 
 	if spikableFaces is None:
 		spikableFaces = [0, 1, 2, 3, 4, 5]

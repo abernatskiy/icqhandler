@@ -98,7 +98,7 @@ for id, (astSh, sp) in enumerate(asteroidParams):
 threadPool = ThreadPool(threads)
 def renderAst(astParams):
 	id, (astSh, _) = astParams
-	outfile = join(workdir, 'shape_{}'.format(id), 'condition0_distance{}_phase0.png'.format(distance))
+	outfile = join(workdir, 'shape_{}'.format(id), 'condition0_distance{}_phase0000.png'.format(distance))
 	lsColor = [ lightBrightness*comp for comp in lightColor ]
 	astSh.renderSceneCartesian(outfile, cameraLocation=[cameraX, cameraY, cameraZ],
 #	                                    rotationAxis=astRotAxis, rotationAngle=ph,

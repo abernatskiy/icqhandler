@@ -3,13 +3,13 @@
 #####    CONFIGURATION    #####
 
 # System
-randomSeed = 2324
+randomSeed = 56234
 
 # Asteroid generator
 numAsteroids = 100
 resolutionPower = 2
 resolutionQ = int(2**resolutionPower)
-numSpikes = 1
+numSpikes = 3
 spikableFaces = [1, 4, 5] # render from [-R, R, -R]
 spikeSize = 0.1
 

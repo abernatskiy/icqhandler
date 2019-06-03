@@ -11,7 +11,7 @@
        a. Degree n of the spherical harmonic perturbation is sampled from
           geometric distribution decaying at rate degreeDecay.
        b. Order m of the spherical harmonic perturbation is sampled from uniform
-          distribution over [-n, -n+1, ..., n]
+          distribution over {-n, -n+1, ..., n}
        c. Amplitude of the spherical harmonic perturbation is computed as
           r*baseRadius, where r is a random number from [0,1] sampled from beta
           distribution with alpha=1 and beta=1+magnitudeDecay*n*abs(m)
@@ -69,7 +69,7 @@ cpus = 8
 randomSeed = 42
 
 # Asteroid generator
-numAsteroids = 10
+numAsteroids = 2
 baseRadius = 15.
 baseResolution = 4 # for ICQShape, Q will be 2**4 unless a spherical harmonic
                    # with finer features is applied
@@ -81,9 +81,9 @@ degreeDecay = 0.15
 magnitudeDecay = 0.35
 
 # Geometry generator
-distances = [ 250, 125, 62 ]
+distances = [ 125, 62 ]
 numRotationsPerAsteroid = 1
-numPhases = 50
+numPhases = 25
 lightSourceDistance = 1000
 lightSourceBrightness = 3
 
@@ -149,6 +149,7 @@ for id, astSh in enumerate(asteroidShapes):
 	astDir = join(workdir, 'asteroid{}'.format(id))
 	makedirs(astDir)
 	astSh.writeICQ(join(astDir, 'icq.txt'))
+	astSh.writeICQ(join(astDir, 'shape.obj'))
 
 asteroidRotationAxes = [ [ sampleARotationAxis() for _ in range(numRotationsPerAsteroid) ] for _ in range(numAsteroids) ]
 for id, arot in enumerate(asteroidRotationAxes):

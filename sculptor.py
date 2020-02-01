@@ -60,3 +60,22 @@ class Sculptor:
 #			print('old mag = {}, new mag = {}'.format(vmag, vmag*newmag))
 			return tuple( v*newmag for v in vertex )
 		self.applyShaperFunction(scaleVertexAppropriately)
+
+	def shapeWithArendCones(self, thetas, phis, radii, magnitudes, baseRadius=1.):
+		self.rollIntoABall(radius=1.)
+		verts = self.shape.getVertices()
+		numVerts = len(verts)
+		numCones = len(thetas)
+
+		npverts = np.array(verts, dtype=np.float)
+		weights = np.ones(numVerts)
+		for nc in range(numCones):
+			dirvec = np.array([np.sin(thetas[nc])*np.cos(phis[nc]), np.sin(thetas[nc])*np.sin(phis[nc]), np.cos(thetas[nc])], dtype=np.float)
+			distances = np.sqrt(2.*(1.-npverts.dot(dirvec)))
+			wholeSphereCone = radii[nc]-distances
+			weights += magnitudes[nc]*wholeSphereCone.clip(min=0.)
+
+		newVertices = []
+		for i in range(numVerts):
+			newVertices.append([ baseRadius*weights[i]*x for x in verts[i] ])
+		self.shape.setVertices(newVertices)

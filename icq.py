@@ -161,6 +161,41 @@ class ICQShape(AbstractShape):
 
 		return all(map(all, edges)) and all(map(all, corners))
 
+	def getRedundancyList(self):
+		'''Returns a list of lists, where each sublist contains all 3D indices of a unique vertex'''
+		corners = [ [ (0, 0, 0), (2, 0, 0), (3, 0, self.q) ],                    # v(0,0,0) = v(0,0,2) = v(Q,0,3)
+		            [ (0, self.q, 0), (1, 0, 0), (2, 0, self.q) ],               # v(0,Q,0) = v(0,0,1) = v(Q,0,2)
+		            [ (0, 0, self.q), (3, 0, 0), (4, 0, self.q) ],               # v(Q,0,0) = v(0,0,3) = v(Q,0,4)
+		            [ (0, self.q, self.q), (4, 0, 0), (1, 0, self.q) ],          # v(Q,Q,0) = v(0,0,4) = v(Q,0,1)
+		            [ (5, 0, 0), (1, self.q, 0), (2, self.q, self.q) ],          # v(0,0,5) = v(0,Q,1) = v(Q,Q,2)
+		            [ (5, self.q, 0), (2, self.q, 0), (3, self.q, self.q) ],     # v(0,Q,5) = v(0,Q,2) = v(Q,Q,3)
+		            [ (5, 0, self.q), (4, self.q, 0), (1, self.q, self.q) ],     # v(Q,0,5) = v(0,Q,4) = v(Q,Q,1)
+		            [ (5, self.q, self.q), (3, self.q, 0), (4, self.q, self.q) ] # v(Q,Q,5) = v(0,Q,3) = v(Q,Q,4)
+		]
+
+		edges = sum([ [ [ (5, self.q, i), (3, self.q, self.q-i) ] for i in range(1, self.q) ], # v(I,Q,5)=v(Q-I,Q,3)
+		              [ [ (5, 0, i), (1, self.q, i) ] for i in range(1, self.q) ],             # v(I,0,5)=v(I,Q,1)
+		              [ [ (4, 0, i), (0, self.q-i, self.q) ] for i in range(1, self.q) ],      # v(I,0,4)=v(Q,Q-I,0)
+		              [ [ (3, 0, i), (0, 0, self.q-i) ] for i in range(1, self.q) ],           # v(I,0,3)=v(Q-i,0,0)
+		              [ [ (2, 0, i), (0, i, 0) ] for i in range(1, self.q) ],                  # v(I,0,2)=v(0,I,0)
+		              [ [ (1, 0, i), (0, self.q, i) ] for i in range(1, self.q) ],             # v(I,0,1)=v(I,Q,0)
+		              [ [ (5, i, self.q), (4, self.q, i) ] for i in range(1, self.q) ],        # v(q,I,5)=v(I,Q,4)
+		              [ [ (4, i, self.q), (3, i, 0) ] for i in range(1, self.q) ],             # v(q,I,4)=v(0,I,3)
+		              [ [ (3, i, self.q), (2, i, 0) ] for i in range(1, self.q) ],             # v(q,I,3)=v(0,I,2)
+		              [ [ (2, i, self.q), (1, i, 0) ] for i in range(1, self.q) ],             # v(q,I,2)=v(0,I,1)
+		              [ [ (5, i, 0), (2, self.q, self.q-i) ] for i in range(1, self.q) ],      # v(0,I,5)=v(Q-I,Q,2)
+		              [ [ (4, i, 0), (1, i, self.q) ] for i in range(1, self.q) ]               # v(0,I,4)=v(Q,I,1)
+								], [])
+
+		# inner vertices
+		faces = []
+		for face in range(6):
+			for i in range(1, self.q):
+				for j in range(1, self.q):
+					faces.append([(face, i, j)])
+
+		return corners + edges + faces
+
 	def getTrianglesOn3DIndices(self):
 		'''Returns the list of six lists of triangles constituting the model.
 		   Each sublist contains all trianges of the corresponding face.
@@ -267,9 +302,6 @@ class ICQShape(AbstractShape):
 
 	###### Overloading abstract methods of AbstractShape #####
 
-	def getTriangleIndices(self):
-		return self.getTrianglesOnFlatIndices()
-
 	def getVertices(self):
 		if not self.rawVerticesUpToDate:
 			self.unparseVerticesToRaw()
@@ -280,6 +312,30 @@ class ICQShape(AbstractShape):
 			self.q = newq
 		self.rawVertices = newVertices
 		self.parseRawVertices()
+
+	def getTriangleIndices(self):
+		return self.getTrianglesOnFlatIndices()
+
+	def getUniqueVertices(self):
+		redlist = self.getRedundancyList()
+		uniqverts = []
+		for allvertidxs in redlist:
+			vertrecs = [ self.vertices[f][j][i] for f,j,i in allvertidxs ]
+			if len(set(vertrecs)) > 1:
+				print(f'WARNING: found inconsistent records of vertex vals while uniquifying vertices\n{vertrecs}')
+			uniqverts.append(vertrecs[0])
+		return uniqverts
+
+	def getTriangleIndicesForUniqueVertices(self):
+		redlist = self.getRedundancyList()
+		numverts = len(redlist)
+
+		invredlist = {}
+		for i in range(numverts):
+			for vertidxs in redlist[i]:
+				invredlist[vertidxs] = i
+
+		return [ (invredlist[v0],invredlist[v1],invredlist[v2]) for v0,v1,v2 in sum(self.getTrianglesOn3DIndices(), []) ]
 
 	def getMinAngularFeatureSize(self):
 		'''Returns the minimum side length of any triangle in the mesh representation of the model'''

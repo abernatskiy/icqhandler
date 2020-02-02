@@ -52,23 +52,54 @@ class AbstractShape(ABC):
 		lightLocation[2] = -lightLocation[2]
 
 		vertices = self.getVertices()
-
 		if rotationAxis and rotationAngle:
 			rotationMatrix = rotation_matrix(rotationAxis, rotationAngle)
 			# Z axis must be flipped in vertex coords as well, before the transform
 			vertexArgs = [ len(vertices) ] + [ list(np.dot(rotationMatrix, np.array([x,y,-z]))) for x,y,z in vertices ]
 		else:
 			vertexArgs = [ len(vertices) ] + [ [x,y,-z] for x,y,z in vertices ] # even if there is no rotation we must flip Z axis
+
 		triangleIndices = self.getTriangleIndices()
 		faceArgs = [ len(triangleIndices) ] + list(map(list, triangleIndices))
 
+		normales = np.zeros((len(vertices), 3))
+		npvertices = np.array(vertices)
+		for v0, v1, v2 in triangleIndices:
+			triangleNormale = np.cross(npvertices[v1,:]-npvertices[v0,:], npvertices[v2,:]-npvertices[v0,:])
+			triangleNormale /= np.linalg.norm(triangleNormale)
+			triangleArea = np.dot(npvertices[v1,:]-npvertices[v0,:], npvertices[v2,:]-npvertices[v0,:])/2
+			normales[v0,:] += triangleNormale*triangleArea
+			normales[v1,:] += triangleNormale*triangleArea
+			normales[v2,:] += triangleNormale*triangleArea
+		normales /= np.linalg.norm(normales, axis=1, keepdims=True)
+
+#		for i in range(len(vertices)):
+#			print(f'Vertex {vertices[i]} has normale {normales[i]} (product {np.dot(vertices[i], normales[i])})')
+#			print(f'{np.dot(vertices[i], normales[i])}')
+
+		normaleArgs = [ len(vertices) ] + [ [x,y,-z] for x,y,z in [ normales[i,:] for i in range(len(vertices)) ] ]
+
 #		print('Rendering with camera at {} and light at {}'.format(str(cameraLocation), str(lightLocation)))
 
+		asteroid = vpr.Mesh2(vpr.VertexVectors(*vertexArgs),
+		                     vpr.NormalVectors(*normaleArgs),
+		                     vpr.FaceIndices(*faceArgs),
+		                     vpr.Texture(vpr.Pigment('color', 'rgb', [0.5, 0.5, 0.5]),
+		                                 vpr.Normal('bumps', 0.75, 'scale', 0.0125),
+		                                 vpr.Finish('phong', 0.1)
+		                     )
+		           )
+
+#		                     vpr.Texture(vpr.Pigment('color', objectColor)))
+
 		return vpr.Scene( vpr.Camera('location', cameraLocation, 'look_at', cameraTarget, 'sky', [0,0,-1]),
-		                  [ vpr.LightSource(lightLocation, 'color', lightColor),
-		                    vpr.Background('color', backgroundColor),
-		                    vpr.Mesh2(vpr.VertexVectors(*vertexArgs), vpr.FaceIndices(*faceArgs), vpr.Pigment('color', objectColor))
-		                  ]
+		                  objects = [ vpr.LightSource(lightLocation, 'color', lightColor),
+		                              vpr.Background('color', backgroundColor),
+		                              asteroid
+		                  ],
+		                  included = ["colors.inc", "textures.inc"]
+#		                  defaults = [vpr.Finish( 'ambient', 0.0, 'diffuse', 0.0)]
+		                  ,global_settings = [ 'ambient_light <0.5,0,0>' ]
 		                )
 
 	def getSceneSpherical(self, *, cameraR=100., cameraTheta=0., cameraPhi=0.,

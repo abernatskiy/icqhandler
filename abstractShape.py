@@ -36,6 +36,16 @@ class AbstractShape(ABC):
 		pass
 
 	@abstractmethod
+	def getUniqueVertices(self):
+		'''Returns a flat list of unique vertices. This representation may be lossy, so do not use it for transformations.'''
+		pass
+
+	@abstractmethod
+	def getTriangleIndicesForUniqueVertices(self):
+		'''Returns triangles of the shape in form of triples of indices of vertices in the list returned by getUniqueVertices().'''
+		pass
+
+	@abstractmethod
 	def getMinAngularFeatureSize(self):
 		pass
 
@@ -51,7 +61,7 @@ class AbstractShape(ABC):
 		cameraTarget[2] = -cameraTarget[2]
 		lightLocation[2] = -lightLocation[2]
 
-		vertices = self.getVertices()
+		vertices = self.getUniqueVertices()
 		if rotationAxis and rotationAngle:
 			rotationMatrix = rotation_matrix(rotationAxis, rotationAngle)
 			# Z axis must be flipped in vertex coords as well, before the transform
@@ -59,7 +69,7 @@ class AbstractShape(ABC):
 		else:
 			vertexArgs = [ len(vertices) ] + [ [x,y,-z] for x,y,z in vertices ] # even if there is no rotation we must flip Z axis
 
-		triangleIndices = self.getTriangleIndices()
+		triangleIndices = self.getTriangleIndicesForUniqueVertices()
 		faceArgs = [ len(triangleIndices) ] + list(map(list, triangleIndices))
 
 		normales = np.zeros((len(vertices), 3))
@@ -77,7 +87,13 @@ class AbstractShape(ABC):
 #			print(f'Vertex {vertices[i]} has normale {normales[i]} (product {np.dot(vertices[i], normales[i])})')
 #			print(f'{np.dot(vertices[i], normales[i])}')
 
-		normaleArgs = [ len(vertices) ] + [ [x,y,-z] for x,y,z in [ normales[i,:] for i in range(len(vertices)) ] ]
+		if rotationAxis and rotationAngle:
+			rotationMatrix = rotation_matrix(rotationAxis, rotationAngle)
+			# Z axis must be flipped in vertex coords as well, before the transform
+			normaleArgs = [ len(vertices) ] + [ list(np.dot(rotationMatrix, np.array([x,y,-z]))) for x,y,z in [ normales[i,:] for i in range(len(vertices)) ] ]
+		else:
+			# even if there is no rotation we must flip Z axis
+			normaleArgs = [ len(vertices) ] + [ [x,y,-z] for x,y,z in [ normales[i,:] for i in range(len(vertices)) ] ]
 
 #		print('Rendering with camera at {} and light at {}'.format(str(cameraLocation), str(lightLocation)))
 
@@ -98,8 +114,8 @@ class AbstractShape(ABC):
 		                              asteroid
 		                  ],
 		                  included = ["colors.inc", "textures.inc"]
-#		                  defaults = [vpr.Finish( 'ambient', 0.0, 'diffuse', 0.0)]
-		                  ,global_settings = [ 'ambient_light <0.5,0,0>' ]
+#		                  ,defaults = [vpr.Finish( 'ambient', 0.0, 'diffuse', 0.0)]
+		                  ,global_settings = [ 'ambient_light <0,0,0>' ]
 		                )
 
 	def getSceneSpherical(self, *, cameraR=100., cameraTheta=0., cameraPhi=0.,
@@ -132,7 +148,7 @@ class AbstractShape(ABC):
 	def writeOBJ(self, objFileName):
 		'''Exports the shape in Wavefront .OBJ format'''
 		with open(objFileName, 'w') as oof:
-			for x,y,z in self.getVertices():
+			for x,y,z in self.getUniqueVertices():
 				oof.write('v {} {} {}\n'.format(x,y,z))
-			for v1,v2,v3 in self.getTriangleIndices():
+			for v1,v2,v3 in self.getTriangleIndicesForUniqueVertices():
 				oof.write('f {} {} {}\n'.format(v1+1,v2+1,v3+1))

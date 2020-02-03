@@ -321,7 +321,7 @@ class ICQShape(AbstractShape):
 		uniqverts = []
 		for allvertidxs in redlist:
 			vertrecs = [ self.vertices[f][j][i] for f,j,i in allvertidxs ]
-			if len(set(vertrecs)) > 1:
+			if len(set(map(tuple, vertrecs))) > 1:
 				print(f'WARNING: found inconsistent records of vertex vals while uniquifying vertices\n{vertrecs}')
 			uniqverts.append(vertrecs[0])
 		return uniqverts

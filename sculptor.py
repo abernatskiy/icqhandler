@@ -3,6 +3,18 @@ from scipy.special import sph_harm
 
 _sqrt2 = np.sqrt(2.)
 
+def filletCone(rs, magnitude, mainRadius, filletRadius):
+	rho = filletRadius
+	R = mainRadius
+	m = magnitude
+	d1 = rho*m*R / (R**2 + m**2 + R*np.sqrt(R**2+m**2))
+	d2 = rho*m / (R + np.sqrt(R**2+m**2))
+
+	return np.piecewise(rs, [rs<R-d1, rs>R+d2, np.logical_and(rs>=R-d1, rs<=R+d2)],
+	                    [lambda r : m*(1-r/R),
+	                     lambda r : 0,
+	                     lambda r : rho - np.sqrt(rho**2 - (r-R-d2)**2)])
+
 def real_sph_harm(m, n, theta, phi):
 	'''Real spherical harmonics based on complex ones from scipy.See
 	   https://en.wikipedia.org/wiki/Spherical_harmonics#Real_form
@@ -61,7 +73,7 @@ class Sculptor:
 			return tuple( v*newmag for v in vertex )
 		self.applyShaperFunction(scaleVertexAppropriately)
 
-	def shapeWithArendCones(self, thetas, phis, radii, magnitudes, baseRadius=1.):
+	def shapeWithArendCones(self, thetas, phis, radii, magnitudes, baseRadius=1., coneType='linear'):
 		self.rollIntoABall(radius=1.)
 		verts = self.shape.getVertices()
 		numVerts = len(verts)
@@ -71,9 +83,25 @@ class Sculptor:
 		weights = np.ones(numVerts)
 		for nc in range(numCones):
 			dirvec = np.array([np.sin(thetas[nc])*np.cos(phis[nc]), np.sin(thetas[nc])*np.sin(phis[nc]), np.cos(thetas[nc])], dtype=np.float)
-			distances = np.sqrt(2.*(1.-npverts.dot(dirvec)))
-			wholeSphereCone = radii[nc]-distances
-			weights += magnitudes[nc]*wholeSphereCone.clip(min=0.)
+
+			if coneType == 'gaussian':
+				pows = (npverts.dot(dirvec)-1.) / radii[nc]**2
+				weights += magnitudes[nc]*np.exp(pows)
+			elif coneType == 'linear' or coneType == 'quadratic' or coneType == 'linearWithFillet':
+				distances = np.sqrt(2.*(1.-npverts.dot(dirvec)))
+				wholeSphereCone = radii[nc]-distances
+				wholeSphereCone = wholeSphereCone.clip(min=0.)
+				if coneType == 'linear':
+					weights += magnitudes[nc]*wholeSphereCone # the original Arend cones
+				elif coneType == 'linearWithFillet':
+					if magnitudes[nc]>0:
+						weights += filletCone(distances, magnitudes[nc]*radii[nc], radii[nc], radii[nc])
+					else:
+						weights += -1.*filletCone(distances, -1.*magnitudes[nc]*radii[nc], radii[nc], radii[nc])
+				else:
+					weights += magnitudes[nc]*wholeSphereCone**2/radii[nc]**2
+			else:
+				raise ValueError(f'sculptor.shapeWithArendCones: unknown cone type {coneType}')
 
 		newVertices = []
 		for i in range(numVerts):

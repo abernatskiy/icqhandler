@@ -3,17 +3,26 @@ from scipy.special import sph_harm
 
 _sqrt2 = np.sqrt(2.)
 
-def filletCone(rs, magnitude, mainRadius, filletRadius):
-	rho = filletRadius
+def filletCone(rs, magnitude, mainRadius, sideFilletRadius, topFilletRadius=0.):
+	rho = sideFilletRadius
 	R = mainRadius
 	m = magnitude
 	d1 = rho*m*R / (R**2 + m**2 + R*np.sqrt(R**2+m**2))
 	d2 = rho*m / (R + np.sqrt(R**2+m**2))
-
-	return np.piecewise(rs, [rs<R-d1, rs>R+d2, np.logical_and(rs>=R-d1, rs<=R+d2)],
-	                    [lambda r : m*(1-r/R),
-	                     lambda r : 0,
-	                     lambda r : rho - np.sqrt(rho**2 - (r-R-d2)**2)])
+	if topFilletRadius == 0.:
+		return np.piecewise(rs, [rs<R-d1, rs>R+d2, np.logical_and(rs>=R-d1, rs<=R+d2)],
+		                    [lambda r : m*(1-r/R),
+		                     lambda r : 0,
+		                     lambda r : rho - np.sqrt(rho**2 - (r-R-d2)**2)])
+	else:
+		rhop = topFilletRadius
+		d3 = m*rhop/np.sqrt(R**2 + m**2)
+		fd = rhop*np.sqrt(1 + (m/R)**2)
+		return np.piecewise(rs, [rs<d3, np.logical_and(rs>=d3, rs<R-d1), rs>R+d2, np.logical_and(rs>=R-d1, rs<=R+d2)],
+		                    [lambda r : m - fd + np.sqrt(rhop**2 - r**2),
+		                     lambda r : m*(1-r/R),
+		                     lambda r : 0,
+		                     lambda r : rho - np.sqrt(rho**2 - (r-R-d2)**2)])
 
 def real_sph_harm(m, n, theta, phi):
 	'''Real spherical harmonics based on complex ones from scipy.See
@@ -95,9 +104,9 @@ class Sculptor:
 					weights += magnitudes[nc]*wholeSphereCone # the original Arend cones
 				elif coneType == 'linearWithFillet':
 					if magnitudes[nc]>0:
-						weights += filletCone(distances, magnitudes[nc]*radii[nc], radii[nc], radii[nc])
+						weights += filletCone(distances, magnitudes[nc]*radii[nc], radii[nc], 1.*radii[nc], topFilletRadius=0.5*radii[nc])
 					else:
-						weights += -1.*filletCone(distances, -1.*magnitudes[nc]*radii[nc], radii[nc], radii[nc])
+						weights += -1.*filletCone(distances, -1.*magnitudes[nc]*radii[nc], radii[nc], 1.*radii[nc], topFilletRadius=radii[nc])
 				else:
 					weights += magnitudes[nc]*wholeSphereCone**2/radii[nc]**2
 			else:

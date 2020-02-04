@@ -68,31 +68,31 @@ cpus = 8
 randomSeed = 42
 
 # Asteroid generator
-numAsteroids = 2
+numAsteroids = 1000
 baseRadius = 15.
-baseResolution = 5 # for ICQShape, Q will be 2**baseResolution unless cone
+baseResolution = 6 # for ICQShape, Q will be 2**baseResolution unless cone
                    # with finer features is applied
 #resolutionMargin = 4 # model resolution must be such that the smallest spherical
 #                     # harmonic feature must be at least resolutionMargin times
 #                     # larger than the smallest triangle
 numCones = 200
-radiusRange = [0.4, 1]
+radiusRange = [0.4, 1] # Assuming a unit sphere. WARNING: avoid zero radii
 magnitudesRange = [-0.33, 0.33]
-magnitudesDecay = 1/numCones # leaves 1/numCones for the last cone
-#magnitudesDecay = 0 # leaves 1/numCones for the last cone
+magnitudesDecay = 0 if numCones==0 else 1/numCones # leaves 1/numCones for the last cone
 
 # Geometry generator
-distances = [ 75 ]
+distances = [ 50 ]
 numRotationsPerAsteroid = 1
-numPhases = 32
+numPhases = 8
 lightSourceDistance = 1000
-lightSourceBrightness = 3
-#approachAnglesRange = [ 0, 2.*np.pi ]
+lightSourceBrightness = 2
 approachAnglesRange = [ 0, 0 ]
+#approachAnglesRange = [ np.pi/4, np.pi/4 ]
+#approachAnglesRange = [ 0, 2.*np.pi ]
 
 # Rendering
-renderWidth = 300
-renderHeight = 300
+renderWidth = 600
+renderHeight = 600
 antialiasing = 0.01
 
 ##### END OF CONFIGURATION #####
@@ -106,7 +106,7 @@ def sampleDirections(size=None):
 	return theta, phi
 
 def sampleAnAsteroid():
-	cubeicqpath = Path.home() / 'icqhandler' / 'shapes' / 'cube2.icq'
+	cubeicqpath = Path.home() / 'icqhandler' / 'shapes' / 'cube1.icq'
 	ish = icq.ICQShape()
 	ish.readICQ(cubeicqpath)
 
@@ -119,7 +119,7 @@ def sampleAnAsteroid():
 	magnitudes = magnitudesRange[0] + (magnitudesRange[1]-magnitudesRange[0])*np.random.random(size=numCones)
 	magnitudes *= np.linspace(1., 1.-magnitudesDecay*(numCones-1), num=numCones)
 
-	scu.shapeWithArendCones(thetas, phis, radii, magnitudes, baseRadius=baseRadius)
+	scu.shapeWithArendCones(thetas, phis, radii, magnitudes, baseRadius=baseRadius, coneType='linearWithFillet')
 
 	return scu.getShape()
 
@@ -155,9 +155,8 @@ asteroidShapes = [ sampleAnAsteroid() for _ in range(numAsteroids) ]
 for id, astSh in enumerate(asteroidShapes):
 	astDir = workdir / f'asteroid{id}'
 	astDir.mkdir(parents=True, exist_ok=True)
-#	makedirs(astDir)
 	astSh.writeICQ(astDir / 'icq.txt')
-	astSh.writeICQ(astDir / 'shape.obj')
+	astSh.writeOBJ(astDir / 'shape.obj')
 
 asteroidRotationAxes = [ [ sampleARotationAxis() for _ in range(numRotationsPerAsteroid) ] for _ in range(numAsteroids) ]
 for id, arot in enumerate(asteroidRotationAxes):

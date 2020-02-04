@@ -150,30 +150,27 @@ def saveParams(rotations, filename):
 np.random.seed(randomSeed)
 
 workdir = Path.cwd()
+phases = [ 2.*np.pi*float(i)/float(numPhases) for i in range(numPhases) ]
+threadPool = ThreadPool(cpus if cpus<numPhases else numPhases)
 
-asteroidShapes = [ sampleAnAsteroid() for _ in range(numAsteroids) ]
-for id, astSh in enumerate(asteroidShapes):
+for id in range(numAsteroids):
+	astSh = sampleAnAsteroid()
 	astDir = workdir / f'asteroid{id}'
 	astDir.mkdir(parents=True, exist_ok=True)
 	astSh.writeICQ(astDir / 'icq.txt')
 	astSh.writeOBJ(astDir / 'shape.obj')
 
-asteroidRotationAxes = [ [ sampleARotationAxis() for _ in range(numRotationsPerAsteroid) ] for _ in range(numAsteroids) ]
-for id, arot in enumerate(asteroidRotationAxes):
+	arot = [ sampleARotationAxis() for _ in range(numRotationsPerAsteroid) ]
 	saveParams(arot, workdir / f'asteroid{id}' / 'rotationAxes.txt')
 
-approachAngles = [ [ sampleAnApproachAngle(range=approachAnglesRange) for _ in range(numRotationsPerAsteroid) ] for _ in range(numAsteroids) ]
-for id, aan in enumerate(approachAngles):
+	aan = [ sampleAnApproachAngle(range=approachAnglesRange) for _ in range(numRotationsPerAsteroid) ]
 	saveParams(aan, workdir / f'asteroid{id}' / 'approachAngles.txt')
 
-phases = [ 2.*np.pi*float(i)/float(numPhases) for i in range(numPhases) ]
-threadPool = ThreadPool(cpus if cpus<numPhases else numPhases)
-for astID, astSh, astRotAxes, apprAngles in zip(range(len(asteroidShapes)), asteroidShapes, asteroidRotationAxes, approachAngles):
-	for condID, astRotAxis, apprAngle in zip(range(len(astRotAxes)), astRotAxes, apprAngles):
+	for condID, astRotAxis, apprAngle in zip(range(len(arot)), arot, aan):
 		for dist in distances:
 			def renderPhase(phaseDesc):
 				phid, ph = phaseDesc
-				outfile = workdir / f'asteroid{astID}' / f'condition{condID}_distance{dist}_phase{phid:04}.png'
+				outfile = workdir / f'asteroid{id}' / f'condition{condID}_distance{dist}_phase{phid:04}.png'
 				objColor = (0.5,0.5,0.5)
 				lsColor = (lightSourceBrightness, lightSourceBrightness, lightSourceBrightness)
 #				print('Calling renderer with cam at {}, light source at {}, phase {}'.format((dist,0,apprAngle), (lightSourceDistance,0,0), ph))

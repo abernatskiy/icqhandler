@@ -149,7 +149,7 @@ for id, astSh in enumerate(asteroidShapes):
 	astDir = join(workdir, 'asteroid{}'.format(id))
 	makedirs(astDir)
 	astSh.writeICQ(join(astDir, 'icq.txt'))
-	astSh.writeICQ(join(astDir, 'shape.obj'))
+	astSh.writeOBJ(join(astDir, 'shape.obj'))
 
 asteroidRotationAxes = [ [ sampleARotationAxis() for _ in range(numRotationsPerAsteroid) ] for _ in range(numAsteroids) ]
 for id, arot in enumerate(asteroidRotationAxes):

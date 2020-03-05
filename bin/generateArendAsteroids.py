@@ -3,8 +3,8 @@
 ''' Creates a dataset of rendered synthetic asteroid shapes using Arend's
     spherical cones perturbation.
 
-    Script generate numAsteroids asteroid shapes.
-    Shape sampling procedure is described in arendConesAsteroidGenerator.py.
+    The script generates numAsteroids asteroid shapes using the
+    sampling procedure described in arendConesAsteroidGenerator.py.
     For each shape, a folder asteroid<id> is made in the current directory.
     The directory is then populated with the following files:
 

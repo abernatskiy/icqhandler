@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 import vapory as vpr
 import numpy as np
-import threading
 
 def rotation_matrix(axis, theta):
 	'''Return the rotation matrix associated with counterclockwise rotation about
@@ -135,15 +134,26 @@ class AbstractShape(ABC):
 		                      lightColor=list(lightColor), backgroundColor=list(backgroundColor), objectColor=list(objectColor),
 		                      rotationAxis=rotationAxis, rotationAngle=rotationAngle)
 
-	def renderSceneSpherical(self, outfile, width=1024, height=720, antialiasing=0.01, **kwargs):
-		scene = self.getSceneSpherical(**kwargs)
-		povfilename = '__temp{}__.pov'.format(threading.get_ident())
-		scene.render(outfile, width=width, height=height, antialiasing=antialiasing, tempfile=povfilename, remove_temp=True)
+	def renderScene(self, scene, outfile, output_format, width, height, antialiasing, tempfile):
+		remove_temp = True
+		if output_format == 'png':
+			scene.render(outfile, width=width, height=height, antialiasing=antialiasing, tempfile=tempfile, remove_temp=remove_temp, output_ppm=False)
+			return None
+		elif output_format == 'ppm':
+			scene.render(outfile, width=width, height=height, antialiasing=antialiasing, tempfile=tempfile, remove_temp=remove_temp, output_ppm=True)
+			return None
+		elif output_format == 'numpy':
+			return scene.render(None, width=width, height=height, antialiasing=antialiasing, tempfile=tempfile, remove_temp=remove_temp, output_ppm=False)
+		else:
+			raise ValueError(f'Unrecognized format {output_format}')
 
-	def renderSceneCartesian(self, outfile, width=1024, height=720, antialiasing=0.01, **kwargs):
+	def renderSceneSpherical(self, outfile, width=1024, height=720, antialiasing=0.01, output_format='png', tempfile='__temp__.pov', **kwargs):
+		scene = self.getSceneSpherical(**kwargs)
+		self.renderScene(scene, outfile, output_format, width, height, antialiasing, tempfile)
+
+	def renderSceneCartesian(self, outfile, width=1024, height=720, antialiasing=0.01, output_format='png', tempfile='__temp__.pov', **kwargs):
 		scene = self.getScene(**kwargs)
-		povfilename = '__temp{}__.pov'.format(threading.get_ident())
-		scene.render(outfile, width=width, height=height, antialiasing=antialiasing, tempfile=povfilename, remove_temp=True)
+		self.renderScene(scene, outfile, output_format, width, height, antialiasing, tempfile)
 
 	def writeOBJ(self, objFileName):
 		'''Exports the shape in Wavefront .OBJ format'''

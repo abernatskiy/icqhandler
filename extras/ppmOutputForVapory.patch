@@ -1,0 +1,71 @@
+diff --git a/vapory/io.py b/vapory/io.py
+index 20bc0a1..060a85e 100644
+--- a/vapory/io.py
++++ b/vapory/io.py
+@@ -55,7 +55,7 @@ def ppm_to_numpy(filename=None, buffer=None, byteorder='>'):
+ def render_povstring(string, outfile=None, height=None, width=None,
+                      quality=None, antialiasing=None, remove_temp=True,
+                      show_window=False, tempfile=None, includedirs=None,
+-                     output_alpha=False):
++                     output_alpha=False, output_ppm=False):
+ 
+     """ Renders the provided scene description with POV-Ray.
+ 
+@@ -85,6 +85,9 @@ def render_povstring(string, outfile=None, height=None, width=None,
+     numpy array, due to limitations of the intermediate
+     ppm format.
+ 
++    output_ppm
++      If true, overrides all output format settings and saves a PPM image instead
++
+     """
+ 
+     pov_file = tempfile or '__temp__.pov'
+@@ -94,7 +97,7 @@ def render_povstring(string, outfile=None, height=None, width=None,
+     return_np_array = (outfile is None)
+     display_in_ipython = (outfile=='ipython')
+ 
+-    format_type = "P" if return_np_array else "N"
++    format_type = "P" if return_np_array or output_ppm else "N"
+ 
+     if return_np_array:
+         outfile='-'
+diff --git a/vapory/vapory.py b/vapory/vapory.py
+index e1a4df0..7ed6875 100644
+--- a/vapory/vapory.py
++++ b/vapory/vapory.py
+@@ -58,7 +58,7 @@ class Scene:
+     def render(self, outfile=None, height=None, width=None,
+                      quality=None, antialiasing=None, remove_temp=True,
+                      auto_camera_angle=True, show_window=False, tempfile=None,
+-                     includedirs=None, output_alpha=False):
++                     includedirs=None, output_alpha=False, output_ppm=False):
+ 
+         """ Renders the scene to a PNG, a numpy array, or the IPython Notebook.
+ 
+@@ -84,6 +84,9 @@ class Scene:
+         numpy array, due to limitations of the intermediate
+         ppm format.
+ 
++        output_ppm
++          If true, overrides all output format settings and saves a PPM image instead
++
+         """
+ 
+         if auto_camera_angle and width is not None:
+@@ -91,7 +94,7 @@ class Scene:
+ 
+         return render_povstring(str(self), outfile, height, width,
+                                 quality, antialiasing, remove_temp, show_window,
+-                                tempfile, includedirs, output_alpha)
++                                tempfile, includedirs, output_alpha, output_ppm)
+ 
+ 
+ class POVRayElement:
+@@ -267,4 +270,4 @@ class TextureList(POVRayElement):
+     """ TextureList() """
+ 
+ class ClippedBy(POVRayElement):
+-    """ ClippedBy() """
+\ No newline at end of file
++    """ ClippedBy() """

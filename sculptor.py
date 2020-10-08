@@ -67,6 +67,23 @@ class Sculptor:
 			return tuple(npv*radius/np.linalg.norm(npv))
 		self.applyShaperFunction(normalize)
 
+	def rollIntoAConcentricEllipsoid(self, a, b, c):
+		def scaleVertexAppropriately(vertex):
+			vmag = np.linalg.norm(vertex)
+			vtheta = np.arccos(vertex[2]/vmag)
+			xyplaneproj = np.sqrt(vertex[0]**2+vertex[1]**2)
+			vphi = 0 if xyplaneproj==0 else (np.arccos(vertex[0]/xyplaneproj) if vertex[1]>=0 else np.pi+np.arccos(-vertex[0]/xyplaneproj))
+			return a*np.sin(vtheta)*np.cos(vphi), b*np.sin(vtheta)*np.sin(vphi), c*np.cos(vtheta)
+		self.applyShaperFunction(scaleVertexAppropriately)
+
+	def rollIntoATopShape(self, topMag, baseRadius=1.):
+		def scaleVertexAppropriately(vertex):
+			vmag = np.linalg.norm(vertex)
+			vtheta = np.arccos(vertex[2]/vmag)
+			r = 1. + topMag*np.cos(4*vtheta)
+			return tuple( x*baseRadius*r/vmag for x in vertex )
+		self.applyShaperFunction(scaleVertexAppropriately)
+
 	def perturbWithSphericalHarmonic(self, magnitude, m, n, adaptiveUpscale=True, upscaleMargin=2.):
 		'''Magnitude is absolute, not relative'''
 		if adaptiveUpscale:
